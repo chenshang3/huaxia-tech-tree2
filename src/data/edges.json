@@ -1,0 +1,20 @@
+[
+  { "from": "pottery", "to": "porcelain" },
+  { "from": "silk", "to": "silkroad" },
+  { "from": "silk", "to": "porcelain" },
+  { "from": "bronze", "to": "castiron" },
+  { "from": "castiron", "to": "steel" },
+  { "from": "castiron", "to": "canal" },
+  { "from": "steel", "to": "canal" },
+  { "from": "steel", "to": "rocket" },
+  { "from": "writing", "to": "paper" },
+  { "from": "paper", "to": "printing" },
+  { "from": "printing", "to": "movtype" },
+  { "from": "compass", "to": "silkroad" },
+  { "from": "gunpowder", "to": "rocket" },
+  { "from": "tcm", "to": "acupuncture" },
+  { "from": "abacus", "to": "astronomy" },
+  { "from": "astronomy", "to": "seismograph" },
+  { "from": "astronomy", "to": "silkroad" },
+  { "from": "astronomy", "to": "canal" }
+]

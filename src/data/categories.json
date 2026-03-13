@@ -1,0 +1,46 @@
+{
+  "craft": {
+    "color": "#d4691e",
+    "label": "工艺"
+  },
+  "textile": {
+    "color": "#e05555",
+    "label": "纺织"
+  },
+  "metallurgy": {
+    "color": "#9aa5b1",
+    "label": "冶金"
+  },
+  "culture": {
+    "color": "#4a90d9",
+    "label": "文化"
+  },
+  "navigation": {
+    "color": "#1abc9c",
+    "label": "航海"
+  },
+  "medicine": {
+    "color": "#2ecc71",
+    "label": "医学"
+  },
+  "math": {
+    "color": "#9b59b6",
+    "label": "数学"
+  },
+  "military": {
+    "color": "#e74c3c",
+    "label": "军事"
+  },
+  "science": {
+    "color": "#00bcd4",
+    "label": "科学"
+  },
+  "trade": {
+    "color": "#f39c12",
+    "label": "贸易"
+  },
+  "engineering": {
+    "color": "#8d6e63",
+    "label": "工程"
+  }
+}

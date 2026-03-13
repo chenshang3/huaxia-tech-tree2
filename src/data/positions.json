@@ -1,0 +1,22 @@
+{
+  "pottery": { "x": 90, "y": 68 },
+  "silk": { "x": 280, "y": 68 },
+  "bronze": { "x": 560, "y": 68 },
+  "writing": { "x": 780, "y": 68 },
+  "castiron": { "x": 90, "y": 188 },
+  "compass": { "x": 275, "y": 188 },
+  "tcm": { "x": 455, "y": 188 },
+  "abacus": { "x": 635, "y": 188 },
+  "gunpowder": { "x": 800, "y": 188 },
+  "steel": { "x": 90, "y": 308 },
+  "acupuncture": { "x": 290, "y": 308 },
+  "astronomy": { "x": 490, "y": 308 },
+  "paper": { "x": 700, "y": 308 },
+  "canal": { "x": 90, "y": 424 },
+  "porcelain": { "x": 280, "y": 424 },
+  "silkroad": { "x": 460, "y": 424 },
+  "seismograph": { "x": 640, "y": 424 },
+  "printing": { "x": 810, "y": 424 },
+  "movtype": { "x": 560, "y": 530 },
+  "rocket": { "x": 760, "y": 530 }
+}
