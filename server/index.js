@@ -66,13 +66,12 @@ app.post('/api/algorithms/bfs', (req, res) => {
 
   while (q.length) {
     const cur = q.shift();
-    const snap = new Set(vis);
     const fresh = (ADJ[cur] || []).filter(n => !vis.has(n));
     fresh.forEach(n => {
       vis.add(n);
       q.push(n);
     });
-    steps.push({ cur, queue: [...q], visited: snap, fresh, ds: 'queue' });
+    steps.push({ cur, queue: [...q], visited: [...vis], fresh, ds: 'queue' });
   }
   res.json({ steps });
 });
@@ -92,10 +91,9 @@ app.post('/api/algorithms/dfs', (req, res) => {
     const cur = stk.pop();
     if (vis.has(cur)) continue;
     vis.add(cur);
-    const snap = new Set(vis);
     const fresh = [...(ADJ[cur] || [])].reverse().filter(n => !vis.has(n));
     fresh.forEach(n => stk.push(n));
-    steps.push({ cur, stack: [...stk], visited: snap, fresh, ds: 'stack' });
+    steps.push({ cur, stack: [...stk], visited: [...vis], fresh, ds: 'stack' });
   }
   res.json({ steps });
 });

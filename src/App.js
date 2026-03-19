@@ -49,16 +49,16 @@ export default function HuaxiaTechTree() {
 
   const nState = (id) => {
     if(!step) return "idle"
-    if(step.cur===id)                           return "current"
-    if(step.visited.has(id))                    return "visited"
-    if(mode==="bfs" && step.queue?.includes(id)) return "queued"
-    if(mode==="dfs" && step.stack?.includes(id)) return "stacked"
+    if(step.cur===id)                               return "current"
+    if(step.visited.includes(id))                   return "visited"
+    if(mode==="bfs" && step.queue?.includes(id))   return "queued"
+    if(mode==="dfs" && step.stack?.includes(id))    return "stacked"
     return "idle"
   }
   const eState = (f,t) => {
     if(!step) return "idle"
-    if(step.cur===f && step.fresh?.includes(t)) return "active"
-    if(step.visited.has(f)&&step.visited.has(t)) return "done"
+    if(step.cur===f && step.fresh?.includes(t))       return "active"
+    if(step.visited.includes(f)&&step.visited.includes(t)) return "done"
     return "idle"
   }
 
@@ -139,7 +139,7 @@ export default function HuaxiaTechTree() {
     }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;400&family=JetBrains+Mono:wght@400&display=swap');
-        *{box-sizing:border-box;margin:0;padding:0}
+        *{box-sizing:border-box;margin:0;padding:0;user-select:none}
         ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#0a0c12}::-webkit-scrollbar-thumb{background:#c8a045;border-radius:2px}
         button{cursor:pointer;border:none;font-family:inherit}
         @keyframes pulse{0%,100%{opacity:.07}50%{opacity:.02}}
