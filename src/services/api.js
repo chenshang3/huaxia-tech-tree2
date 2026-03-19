@@ -5,11 +5,6 @@ export async function fetchNodes() {
   return res.json();
 }
 
-export async function fetchEdges() {
-  const res = await fetch(`${API_BASE}/edges`);
-  return res.json();
-}
-
 export async function fetchCategories() {
   const res = await fetch(`${API_BASE}/categories`);
   return res.json();
@@ -46,12 +41,11 @@ export async function runDFS(start) {
 }
 
 export async function fetchAllData() {
-  const [nodes, edges, categories, positions, adjacency] = await Promise.all([
+  const [nodes, categories, positions, adjacency] = await Promise.all([
     fetchNodes(),
-    fetchEdges(),
     fetchCategories(),
     fetchPositions(),
     fetchAdjacency(),
   ]);
-  return { nodes, edges, categories, positions, ...adjacency };
+  return { nodes, categories, positions: positions.positions, ...adjacency };
 }

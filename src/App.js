@@ -16,8 +16,14 @@ export default function HuaxiaTechTree() {
 
   // Data from API
   const [NODES, setNODES] = useState([])
-  const [EDGES, setEDGES] = useState([])
   const [POS,   setPOS]   = useState({})
+  // Pan/Zoom state
+  const [pan,          setPan]          = useState({ x: 0, y: 0 })
+  const [timelinePanX, setTimelinePanX] = useState(0)
+  const [scale,        setScale]        = useState(1)
+  const [isDragging,   setIsDragging]   = useState(false)
+  const panRef          = useRef({ x: 0, y: 0, dragging: false, startX: 0, startY: 0 })
+  const scaleRef        = useRef(1)
   const [CAT,   setCAT]   = useState({})
   const [ADJ,   setADJ]   = useState({})
   const [RADJ,  setRADJ]  = useState({})
@@ -30,7 +36,6 @@ export default function HuaxiaTechTree() {
     fetchAllData()
       .then(data => {
         setNODES(data.nodes);
-        setEDGES(data.edges);
         setPOS(data.positions);
         setCAT(data.categories);
         setADJ(data.adj);
@@ -85,10 +90,74 @@ export default function HuaxiaTechTree() {
   const selD = sel?NMAP[sel]:null
   const R = 28
 
+  // Derive edges from adjacency list
+  const EDGES = NODES.flatMap(n => (ADJ[n.id] || []).map(to => ({ from: n.id, to })))
+
+  // Pan/Zoom handlers
+  const onWheel = useCallback((e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const newScale = Math.max(0.3, Math.min(4, scaleRef.current * delta));
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const scaleDiff = newScale - scaleRef.current;
+
+    const svgEl = e.currentTarget;
+    const vb = svgEl.viewBox.baseVal;
+    const vbMouseX = (mouseX / rect.width) * vb.width + panRef.current.x;
+    const vbMouseY = (mouseY / rect.height) * vb.height + panRef.current.y;
+
+    // Graph: zoom toward graph-coordinate point under mouse
+    const newPanX = panRef.current.x - scaleDiff * vbMouseX / newScale;
+    const newPanY = panRef.current.y - scaleDiff * vbMouseY / newScale;
+
+    // Timeline: same panX as graph (same vbMouseX, same formula)
+    const newTimelinePanX = panRef.current.x - scaleDiff * vbMouseX / newScale;
+
+    scaleRef.current = newScale;
+    panRef.current = { ...panRef.current, x: newPanX, y: newPanY };
+    setScale(newScale);
+    setPan({ x: newPanX, y: newPanY });
+    setTimelinePanX(newTimelinePanX);
+  }, []);
+
+  const onMouseDown = useCallback((e) => {
+    if (e.button !== 0) return;
+    panRef.current = { ...panRef.current, dragging: true, startX: e.clientX, startY: e.clientY };
+    setIsDragging(true);
+  }, []);
+
+  const onMouseMove = useCallback((e) => {
+    if (!panRef.current.dragging) return;
+    const dx = e.clientX - panRef.current.startX;
+    const dy = e.clientY - panRef.current.startY;
+    panRef.current.startX = e.clientX;
+    panRef.current.startY = e.clientY;
+    const newPan = { x: panRef.current.x + dx, y: panRef.current.y + dy };
+    panRef.current = { ...panRef.current, ...newPan };
+    setPan(newPan);
+    setTimelinePanX(newPan.x);
+  }, []);
+
+  const onMouseUp = useCallback(() => {
+    panRef.current = { ...panRef.current, dragging: false };
+    setIsDragging(false);
+  }, []);
+
+  const resetView = useCallback(() => {
+    panRef.current = { x: 0, y: 0, dragging: false, startX: 0, startY: 0 };
+    scaleRef.current = 1;
+    setPan({ x: 0, y: 0 });
+    setScale(1);
+    setTimelinePanX(0);
+  }, []);
+
   const edgePath = (f,t)=>{
     const a=POS[f],b=POS[t]; if(!a||!b) return ""
-    const mid=(a.y+b.y)/2
-    return `M ${a.x} ${a.y+R+1} C ${a.x} ${mid}, ${b.x} ${mid}, ${b.x} ${b.y-R-1}`
+    const midX=(a.x+b.x)/2
+    return `M ${a.x+R+1} ${a.y} C ${midX} ${a.y}, ${midX} ${b.y}, ${b.x-R-1} ${b.y}`
   }
 
   /* ── Buttons helper ── */
@@ -241,7 +310,17 @@ export default function HuaxiaTechTree() {
         {/* CENTER */}
         <main style={{flex:1,overflow:"hidden",position:"relative",background:"#06080d"}}>
           {tab==="graph" ? (
-            <svg viewBox="0 0 920 580" style={{width:"100%",height:"100%"}} xmlns="http://www.w3.org/2000/svg">
+            <>
+            <svg
+              viewBox="0 0 1200 640"
+              style={{width:"100%",height:"100%",cursor:isDragging?"grabbing":"grab"}}
+              xmlns="http://www.w3.org/2000/svg"
+              onWheel={onWheel}
+              onMouseDown={onMouseDown}
+              onMouseMove={onMouseMove}
+              onMouseUp={onMouseUp}
+              onMouseLeave={onMouseUp}
+            >
               <defs>
                 <pattern id="grid" width="45" height="45" patternUnits="userSpaceOnUse">
                   <path d="M 45 0 L 0 0 0 45" fill="none" stroke="rgba(200,160,69,.04)" strokeWidth=".6"/>
@@ -252,55 +331,83 @@ export default function HuaxiaTechTree() {
                   </marker>
                 ))}
               </defs>
-              <rect width="920" height="580" fill="url(#grid)"/>
+              <rect width="1200" height="640" fill="url(#grid)"/>
 
-              {/* Era lines */}
-              {[["先秦以前",68],["春秋汉代",188],["两汉时期",308],["隋唐时期",424],["宋朝以降",530]].map(([l,y],i)=>(
-                <g key={i}>
-                  <line x1="12" y1={y} x2="910" y2={y} stroke="rgba(200,160,69,.04)" strokeWidth=".8" strokeDasharray="3,7"/>
-                  <text x="908" y={y-6} textAnchor="end" fontSize="10" fill="rgba(200,160,69,.17)"
-                    fontFamily='"Noto Serif SC"' letterSpacing="2">{l}</text>
-                </g>
-              ))}
+              {/* ── Graph content: full pan & zoom ── */}
+              <g transform={`translate(${pan.x},${pan.y}) scale(${scale})`}>
 
-              {/* Edges */}
-              {EDGES.map((e,i)=>{
-                const st=eState(e.from,e.to)
-                const [clr,sw,mk]=st==="active"?["#ff4136",2.5,"aA"]:st==="done"?["rgba(200,160,69,.6)",1.5,"aD"]:["rgba(200,160,69,.14)",1,"a0"]
-                return <path key={i} d={edgePath(e.from,e.to)} fill="none" stroke={clr} strokeWidth={sw}
-                  markerEnd={`url(#${mk})`} style={{transition:"stroke .35s,stroke-width .35s"}}/>
-              })}
+                {/* Edges */}
+                {EDGES.map((e,i)=>{
+                  const st=eState(e.from,e.to)
+                  const [clr,sw,mk]=st==="active"?["#ff4136",2.5,"aA"]:st==="done"?["rgba(200,160,69,.6)",1.5,"aD"]:["rgba(200,160,69,.14)",1,"a0"]
+                  return <path key={i} d={edgePath(e.from,e.to)} fill="none" stroke={clr} strokeWidth={sw}
+                    markerEnd={`url(#${mk})`} style={{transition:"stroke .35s,stroke-width .35s"}}/>
+                })}
 
-              {/* Nodes */}
-              {NODES.map(node=>{
-                const p=POS[node.id]; const st=nState(node.id)
-                const cc=CAT[node.cat]?.color??"#c8a045"
-                const rc=st==="current"?"#ff4136":st==="visited"?"#c8a045":st==="queued"?"#4a90d9":st==="stacked"?"#2ecc71":cc
-                const rw=st!=="idle"?2.5:1.5; const isSel=sel===node.id
-                const nm=node.name; const nl=nm.length
-                return (
-                  <g key={node.id} transform={`translate(${p.x},${p.y})`} onClick={()=>onNode(node.id)} style={{cursor:"pointer"}}>
-                    {st==="current"&&<circle r={R+14} fill="#ff4136" opacity=".06">
-                      <animate attributeName="r" values={`${R+10};${R+20};${R+10}`} dur=".9s" repeatCount="indefinite"/>
-                      <animate attributeName="opacity" values="0.07;0.02;0.07" dur=".9s" repeatCount="indefinite"/>
-                    </circle>}
-                    {(st!=="idle"||isSel)&&<circle r={R+7} fill={isSel&&st==="idle"?"#c8a045":rc} opacity=".1"/>}
-                    <circle r={R} fill="#0b0d14"/>
-                    <circle r={R} fill="none" stroke={rc} strokeWidth={rw} style={{transition:"stroke .3s"}}/>
-                    <circle r={4} fill={cc} opacity=".85"/>
-                    {nl<=3&&<text y="3" textAnchor="middle" fontSize="11" fill="#e8dcc8" fontFamily='"Noto Serif SC"' fontWeight="700">{nm}</text>}
-                    {nl===4&&<text y="3" textAnchor="middle" fontSize="9.5" fill="#e8dcc8" fontFamily='"Noto Serif SC"' fontWeight="700">{nm}</text>}
-                    {nl>4&&<>
-                      <text y="-6" textAnchor="middle" fontSize="9" fill="#e8dcc8" fontFamily='"Noto Serif SC"' fontWeight="700">{nm.slice(0,4)}</text>
-                      <text y="5"  textAnchor="middle" fontSize="9" fill="#e8dcc8" fontFamily='"Noto Serif SC"' fontWeight="700">{nm.slice(4)}</text>
-                    </>}
-                    <text y={R+13} textAnchor="middle" fontSize="8" fill="rgba(200,160,69,.38)" fontFamily='"JetBrains Mono"'>
-                      {node.year<0?`${Math.abs(node.year)}BC`:`${node.year}AD`}
-                    </text>
-                  </g>
-                )
-              })}
+                {/* Nodes */}
+                {NODES.map(node=>{
+                  const p=POS[node.id]; const st=nState(node.id)
+                  const cc=CAT[node.cat]?.color??"#c8a045"
+                  const rc=st==="current"?"#ff4136":st==="visited"?"#c8a045":st==="queued"?"#4a90d9":st==="stacked"?"#2ecc71":cc
+                  const rw=st!=="idle"?2.5:1.5; const isSel=sel===node.id
+                  const nm=node.name; const nl=nm.length
+                  return (
+                    <g key={node.id} transform={`translate(${p.x},${p.y})`} onClick={()=>onNode(node.id)} style={{cursor:"pointer"}}>
+                      {st==="current"&&<circle r={R+14} fill="#ff4136" opacity=".06">
+                        <animate attributeName="r" values={`${R+10};${R+20};${R+10}`} dur=".9s" repeatCount="indefinite"/>
+                        <animate attributeName="opacity" values="0.07;0.02;0.07" dur=".9s" repeatCount="indefinite"/>
+                      </circle>}
+                      {(st!=="idle"||isSel)&&<circle r={R+7} fill={isSel&&st==="idle"?"#c8a045":rc} opacity=".1"/>}
+                      <circle r={R} fill="#0b0d14"/>
+                      <circle r={R} fill="none" stroke={rc} strokeWidth={rw} style={{transition:"stroke .3s"}}/>
+                      {nl<=3&&<text y="3" textAnchor="middle" fontSize="11" fill="#e8dcc8" fontFamily='"Noto Serif SC"' fontWeight="700">{nm}</text>}
+                      {nl===4&&<text y="3" textAnchor="middle" fontSize="9.5" fill="#e8dcc8" fontFamily='"Noto Serif SC"' fontWeight="700">{nm}</text>}
+                      {nl>4&&<>
+                        <text y="-6" textAnchor="middle" fontSize="9" fill="#e8dcc8" fontFamily='"Noto Serif SC"' fontWeight="700">{nm.slice(0,4)}</text>
+                        <text y="5"  textAnchor="middle" fontSize="9" fill="#e8dcc8" fontFamily='"Noto Serif SC"' fontWeight="700">{nm.slice(4)}</text>
+                      </>}
+                      <text y={R+13} textAnchor="middle" fontSize="8" fill="rgba(200,160,69,.38)" fontFamily='"JetBrains Mono"'>
+                        {node.year<0?`${Math.abs(node.year)}BC`:`${node.year}AD`}
+                      </text>
+                    </g>
+                  )
+                })}
+              </g>
+
+              {/* ── Timeline: on top, fixed at top, horizontal pan + zoom toward mouse ── */}
+              <g transform={`translate(${timelinePanX},0) scale(${scale})`}>
+                {/* Era range markers — x formula matches server: baseX=60, maxX=1140, spread=5x */}
+                {[
+                  { name: '先秦', start: -7000, end: -500, color: '#8b6914' },
+                  { name: '春秋', start: -500, end: -221, color: '#a07820' },
+                  { name: '战国', start: -221, end: -104, color: '#b89030' },
+                  { name: '秦汉', start: -104, end: 220, color: '#c8a045' },
+                  { name: '隋唐', start: 220, end: 960, color: '#d4b055' },
+                  { name: '宋', start: 960, end: 1232, color: '#e0c068' },
+                ].map(({ name, start, end, color }) => {
+                  const minYear = -7000;
+                  const maxYear = 1232;
+                  const yearRange = maxYear - minYear;
+                  const x1 = Math.round(60 + ((start - minYear) / yearRange) * (1140 - 60) * 5);
+                  const x2 = Math.round(60 + ((end - minYear) / yearRange) * (1140 - 60) * 5);
+                  return (
+                    <g key={name}>
+                      <line x1={x1} y1="44" x2={x2} y2="44" stroke={color} strokeWidth="8" strokeLinecap="round" opacity="0.6"/>
+                      <text x={x1 + 4} y="32" textAnchor="start" fontSize="11" fill={color}
+                        fontFamily='"Noto Serif SC"' letterSpacing="1">{name}</text>
+                      <text x={x1 + 4} y="58" textAnchor="start" fontSize="8" fill="rgba(200,160,69,.4)"
+                        fontFamily='"JetBrains Mono"'>{start < 0 ? `${Math.abs(start)}BC` : `${start}AD`}</text>
+                    </g>
+                  );
+                })}
+              </g>
             </svg>
+            <div style={{position:"absolute",bottom:16,right:16,display:"flex",flexDirection:"column",gap:4}}>
+              <button onClick={()=>{const ns=Math.min(4,scaleRef.current*1.2);scaleRef.current=ns;setScale(ns);setTimelinePanX(pan.x)}} style={{width:28,height:28,background:"rgba(8,6,4,.9)",color:"#c8a045",border:"1px solid rgba(200,160,69,.2)",borderRadius:4,fontSize:16,lineHeight:1}}>+</button>
+              <button onClick={()=>{const ns=Math.max(0.3,scaleRef.current*0.8);scaleRef.current=ns;setScale(ns);setTimelinePanX(pan.x)}} style={{width:28,height:28,background:"rgba(8,6,4,.9)",color:"#c8a045",border:"1px solid rgba(200,160,69,.2)",borderRadius:4,fontSize:16,lineHeight:1}}>−</button>
+              <button onClick={resetView} style={{width:28,height:28,background:"rgba(8,6,4,.9)",color:"#c8a045",border:"1px solid rgba(200,160,69,.2)",borderRadius:4,fontSize:11}}>⌂</button>
+            </div>
+            </>
           ) : (
             /* Adjacency List View */
             <div style={{padding:"20px 24px",overflow:"auto",height:"100%",fontFamily:'"JetBrains Mono",monospace'}}>
