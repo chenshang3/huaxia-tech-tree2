@@ -21,18 +21,25 @@ export function GraphView({
   onNode,
   handlers,
   actions,
+  viewportRef,     // 新增
+  isDragging,      // 新增
 }) {
   return (
     <>
       <svg
+        ref={viewportRef}   // 新增：绑定画布 ref
         viewBox={VIEW_BOX}
-        style={{ width: "100%", height: "100%", cursor: handlers.isDragging ? "grabbing" : "grab" }}
+        style={{
+          width: "100%",
+          height: "100%",
+          cursor: isDragging ? "grabbing" : "grab", // 改这里
+        }}
         xmlns="http://www.w3.org/2000/svg"
         onWheel={handlers.onWheel}
         onMouseDown={handlers.onMouseDown}
         onMouseMove={handlers.onMouseMove}
         onMouseUp={handlers.onMouseUp}
-        onMouseLeave={handlers.onMouseUp}
+        onMouseLeave={handlers.onMouseLeave} // 改这里
       >
         <defs>
           <pattern id="grid" width="45" height="45" patternUnits="userSpaceOnUse">
@@ -67,6 +74,7 @@ export function GraphView({
                 : st === "done"
                 ? ["rgba(139,105,20,.55)", 1.8, "aD"]
                 : ["rgba(139,105,20,.18)", 1.2, "a0"];
+
             return (
               <path
                 key={i}
@@ -80,7 +88,7 @@ export function GraphView({
             );
           })}
 
-          {NODES.map(node => {
+          {NODES.map((node) => {
             const p = POS[node.id];
             const st = nState(node.id, step, mode);
             const cc = CAT[node.cat]?.color ?? "#c8a045";
@@ -175,7 +183,7 @@ export function GraphView({
           })}
         </g>
 
-        <g transform={`translate(${timelinePanX},0) scale(${scale})`}>
+        <g transform={`translate(${timelinePanX},0) scale(${scale},1)`}>
           <line
             x1="60"
             y1="44"
@@ -268,6 +276,7 @@ export function GraphView({
         >
           +
         </button>
+
         <button
           onClick={actions.zoomOut}
           style={{
@@ -284,6 +293,7 @@ export function GraphView({
         >
           −
         </button>
+
         <button
           onClick={actions.resetView}
           style={{

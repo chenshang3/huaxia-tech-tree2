@@ -8,7 +8,7 @@
 //   - 支持图谱视图与邻接表视图切换
 //   - 支持鼠标拖拽平移、滚轮缩放
 //   - 点击节点可查看发明详情、前驱/后继关系
-// ============================================================
+// ============================================================、
 
 import { useState, useMemo } from "react";
 
@@ -31,14 +31,17 @@ import { deriveEdges } from "./utils/graphUtils";
 export default function HuaxiaTechTree() {
   const [tab, setTab] = useState("graph");
   const { NODES, POS, CAT, ADJ, RADJ, NMAP, loading, error } = useGraphData();
+
   const {
     pan,
     timelinePanX,
     scale,
     isDragging,
+    viewportRef,
     handlers,
     actions,
   } = usePanZoom();
+
   const {
     sel,
     mode,
@@ -107,7 +110,14 @@ export default function HuaxiaTechTree() {
           setSteps={setSteps}
         />
 
-        <main style={{ flex: 1, overflow: "hidden", position: "relative", background: "#ebe5d8" }}>
+        <main
+          style={{
+            flex: 1,
+            overflow: "hidden",
+            position: "relative",
+            background: "#ebe5d8",
+          }}
+        >
           {tab === "graph" ? (
             <GraphView
               NODES={NODES}
@@ -122,8 +132,10 @@ export default function HuaxiaTechTree() {
               step={step}
               mode={mode}
               onNode={onNode}
-              handlers={{ ...handlers, isDragging }}
+              handlers={handlers}
               actions={actions}
+              viewportRef={viewportRef}
+              isDragging={isDragging}
             />
           ) : (
             <AdjListView
