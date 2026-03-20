@@ -1,46 +1,62 @@
-{
-  "craft": {
-    "color": "#d4691e",
-    "label": "工艺"
+[
+  {
+    "code": "craft",
+    "name": "工艺",
+    "desc": "中国工艺相关的发明与技术"
   },
-  "textile": {
-    "color": "#e05555",
-    "label": "纺织"
+  {
+    "code": "metallurgy",
+    "name": "冶金",
+    "desc": "中国冶金相关的发明与技术"
   },
-  "metallurgy": {
-    "color": "#9aa5b1",
-    "label": "冶金"
+  {
+    "code": "culture",
+    "name": "文化",
+    "desc": "中国文化相关的发明与技术"
   },
-  "culture": {
-    "color": "#4a90d9",
-    "label": "文化"
+  {
+    "code": "science",
+    "name": "科学",
+    "desc": "中国科学相关的发明与技术"
   },
-  "navigation": {
-    "color": "#1abc9c",
-    "label": "航海"
+  {
+    "code": "medicine",
+    "name": "医学",
+    "desc": "中国医学相关的发明与技术"
   },
-  "medicine": {
-    "color": "#2ecc71",
-    "label": "医学"
+  {
+    "code": "engineering",
+    "name": "工程",
+    "desc": "中国工程相关的发明与技术"
   },
-  "math": {
-    "color": "#9b59b6",
-    "label": "数学"
+  {
+    "code": "military",
+    "name": "军事",
+    "desc": "中国军事相关的发明与技术"
   },
-  "military": {
-    "color": "#e74c3c",
-    "label": "军事"
+  {
+    "code": "navigation",
+    "name": "导航",
+    "desc": "中国导航相关的发明与技术"
   },
-  "science": {
-    "color": "#00bcd4",
-    "label": "科学"
+  {
+    "code": "textile",
+    "name": "纺织",
+    "desc": "中国纺织相关的发明与技术"
   },
-  "trade": {
-    "color": "#f39c12",
-    "label": "贸易"
+  {
+    "code": "trade",
+    "name": "贸易",
+    "desc": "中国贸易相关的发明与技术"
   },
-  "engineering": {
-    "color": "#8d6e63",
-    "label": "工程"
+  {
+    "code": "agriculture",
+    "name": "农业",
+    "desc": "中国农业相关的发明与技术"
+  },
+  {
+    "code": "math",
+    "name": "数学",
+    "desc": "中国数学相关的发明与技术"
   }
-}
+]
