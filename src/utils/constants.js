@@ -8,7 +8,7 @@ export const NODE_RADIUS = 28;
 export const VIEW_BOX = "0 0 1200 640";
 
 export const MIN_SCALE = 0.3;
-export const MAX_SCALE = 4;
+export const MAX_SCALE = 2;
 
 export const ZOOM_FACTOR = 1.05; // 滚轮缩放倍数
 export const SCALE_BUTTON_FACTOR_IN = 1.2;
@@ -20,7 +20,7 @@ export const modeColor = (mode) =>
   mode === "bfs" ? "74,144,217" : mode === "dfs" ? "46,204,113" : "200,160,69";
 
 export const timelineConfig = [
-{ name: '新石器', start: -8000, end: -2700, color: '#7a5230', lightColor: '#f0e6dc' },
+  { name: '新石器', start: -8000, end: -2700, color: '#7a5230', lightColor: '#f0e6dc' },
   { name: '黄帝时期', start: -2700, end: -2100, color: '#8b6914', lightColor: '#f5e6c8' },
   { name: '夏朝', start: -2100, end: -1300, color: '#a07820', lightColor: '#f8ecd4' },
   { name: '商朝', start: -1300, end: -1100, color: '#b89030', lightColor: '#faf0dc' },

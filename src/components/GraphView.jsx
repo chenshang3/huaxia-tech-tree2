@@ -29,6 +29,7 @@ export function GraphView({
       <svg
         ref={viewportRef}   // 新增：绑定画布 ref
         viewBox={VIEW_BOX}
+        preserveAspectRatio="xMidYMin meet"
         style={{
           width: "100%",
           height: "100%",
@@ -72,8 +73,8 @@ export function GraphView({
               st === "active"
                 ? ["#e74c3c", 2.5, "aA"]
                 : st === "done"
-                ? ["rgba(139,105,20,.55)", 1.8, "aD"]
-                : ["rgba(139,105,20,.18)", 1.2, "a0"];
+                  ? ["rgba(139,105,20,.55)", 1.8, "aD"]
+                  : ["rgba(139,105,20,.18)", 1.2, "a0"];
 
             return (
               <path
@@ -96,12 +97,12 @@ export function GraphView({
               st === "current"
                 ? "#e74c3c"
                 : st === "visited"
-                ? "#c8a045"
-                : st === "queued"
-                ? "#4a90d9"
-                : st === "stacked"
-                ? "#2ecc71"
-                : cc;
+                  ? "#c8a045"
+                  : st === "queued"
+                    ? "#4a90d9"
+                    : st === "stacked"
+                      ? "#2ecc71"
+                      : cc;
             const rw = st !== "idle" ? 2.5 : 1.8;
             const isSel = sel === node.id;
             const nm = node.name;
@@ -183,71 +184,97 @@ export function GraphView({
           })}
         </g>
 
-        <g transform={`translate(${timelinePanX},0) scale(${scale},1)`}>
-          <line
-            x1="60"
-            y1="44"
-            x2="1140"
-            y2="44"
-            stroke="rgba(139,105,20,.1)"
-            strokeWidth="14"
-            strokeLinecap="round"
-          />
+        {/* 时间轴位置常量：统一控制高低 */}
+        {(() => {
+          const TL_Y = 44;           // 主轴纵坐标（原来 44）
+          const TL_BAR_Y = 36;       // 朝代色块纵坐标（原来 36）
+          const TL_NAME_Y = 28;      // 朝代名称文字（原来 28）
+          const TL_YEAR_Y = 60;      // 起始年份文字（原来 60）
 
-          {timelineConfig.map(({ name, start, end, color, lightColor }) => {
-            const { min, max } = YEAR_RANGE;
-            const yearRange = max - min;
-            const x1 = Math.round(60 + ((start - min) / yearRange) * (1140 - 60) * 5);
-            const x2 = Math.round(60 + ((end - min) / yearRange) * (1140 - 60) * 5);
-            const width = x2 - x1;
+          const { min, max } = YEAR_RANGE;
+          const yearRange = max - min;
 
-            return (
-              <g key={name}>
-                <rect
-                  x={x1}
-                  y="36"
-                  width={width}
-                  height="16"
-                  rx="4"
-                  fill={lightColor}
-                  opacity="0.7"
-                />
+          return (
+            <g transform={`translate(${timelinePanX},0)`}>
+              {/* 1) 只缩放“图形”，不缩放文字 */}
+              <g transform={`scale(${scale},1)`}>
                 <line
-                  x1={x1}
-                  y1="44"
-                  x2={x2}
-                  y2="44"
-                  stroke={color}
-                  strokeWidth="8"
+                  x1="60"
+                  y1={TL_Y}
+                  x2="1140"
+                  y2={TL_Y}
+                  stroke="rgba(139,105,20,.1)"
+                  strokeWidth="14"
                   strokeLinecap="round"
-                  opacity="0.8"
                 />
-                <text
-                  x={x1 + 4}
-                  y="28"
-                  textAnchor="start"
-                  fontSize="11"
-                  fill={color}
-                  fontFamily='"Noto Serif SC"'
-                  fontWeight="600"
-                  letterSpacing="1"
-                >
-                  {name}
-                </text>
-                <text
-                  x={x1 + 4}
-                  y="60"
-                  textAnchor="start"
-                  fontSize="8"
-                  fill="rgba(90,74,56,.55)"
-                  fontFamily='"JetBrains Mono"'
-                >
-                  {start < 0 ? `${Math.abs(start)}BC` : `${start}AD`}
-                </text>
+
+                {timelineConfig.map(({ name, start, end, color, lightColor }) => {
+                  const x1 = Math.round(60 + ((start - min) / yearRange) * (1140 - 60) * 5);
+                  const x2 = Math.round(60 + ((end - min) / yearRange) * (1140 - 60) * 5);
+                  const width = x2 - x1;
+
+                  return (
+                    <g key={`shape-${name}`}>
+                      <rect
+                        x={x1}
+                        y={TL_BAR_Y}
+                        width={width}
+                        height="16"
+                        rx="4"
+                        fill={lightColor}
+                        opacity="0.7"
+                      />
+                      <line
+                        x1={x1}
+                        y1={TL_Y}
+                        x2={x2}
+                        y2={TL_Y}
+                        stroke={color}
+                        strokeWidth="8"
+                        strokeLinecap="round"
+                        opacity="0.8"
+                      />
+                    </g>
+                  );
+                })}
               </g>
-            );
-          })}
-        </g>
+
+              {/* 2) 单独渲染文字：位置跟着 scale 变化，但文字本身不被拉伸 */}
+              {timelineConfig.map(({ name, start, color }) => {
+                const x1 = Math.round(60 + ((start - min) / yearRange) * (1140 - 60) * 5);
+                const scaledX1 = x1 * scale;
+
+                return (
+                  <g key={`label-${name}`}>
+                    <text
+                      x={scaledX1 + 4}
+                      y={TL_NAME_Y}
+                      textAnchor="start"
+                      fontSize="11"
+                      fill={color}
+                      fontFamily='"Noto Serif SC"'
+                      fontWeight="600"
+                      letterSpacing="1"
+                    >
+                      {name}
+                    </text>
+
+                    <text
+                      x={scaledX1 + 4}
+                      y={TL_YEAR_Y}
+                      textAnchor="start"
+                      fontSize="8"
+                      fill="rgba(90,74,56,.55)"
+                      fontFamily='"JetBrains Mono"'
+                    >
+                      {start < 0 ? `${Math.abs(start)}BC` : `${start}AD`}
+                    </text>
+                  </g>
+                );
+              })}
+            </g>
+          );
+        })()}
       </svg>
 
       <div
