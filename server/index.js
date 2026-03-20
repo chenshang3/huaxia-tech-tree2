@@ -4,6 +4,7 @@ const path = require('path');
 
 const nodesData = require('./data/nodes.json');
 const categoriesData = require('./data/categories.json');
+const timelineConfig = require('./data/timelineConfig.json');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -30,29 +31,34 @@ const RADJ = RADJ_temp;
 // 构建节点映射
 const NMAP = Object.fromEntries(nodesData.map(n => [n.id, n]));
 
-// Era 年代分界定义
-const ERA_RANGES = [
-  { name: '先秦', start: -7000, end: -500 },
-  { name: '春秋', start: -500, end: -221 },
-  { name: '战国', start: -221, end: -104 },
-  { name: '秦汉', start: -104, end: 220 },
-  { name: '隋唐', start: 220, end: 960 },
-  { name: '宋', start: 960, end: 1232 },
-];
+// 计算年份对应的加权位置
+function yearToWeightedYear(year, config) {
+  let cumulativeYears = 0;
+  for (const { start, end, scale } of config) {
+    if (year >= start && year < end) {
+      return cumulativeYears + (year - start) * scale;
+    }
+    cumulativeYears += (end - start) * scale;
+  }
+  return cumulativeYears;
+}
 
 // 位置计算函数
 function computePositions(nodes) {
-  const years = nodes.map(n => n.year);
-  const minYear = Math.min(...years);
-  const maxYear = Math.max(...years);
-  // 年份差（考虑 BC/AD 跨越 0 年）
-  const yearRange = maxYear - minYear || 1;
-
   // 固定画布
   const svgWidth = 1200;
-  const svgHeight = 640;
   const baseX = 60;
   const maxX = svgWidth - 60;
+  const TIMELINE_SCALE = 10; // 时间轴延长倍数（与前端一致）
+
+  // 计算总加权跨度
+  let totalWeightedYears = 0;
+  timelineConfig.forEach(({ start, end, scale }) => {
+    totalWeightedYears += (end - start) * scale;
+  });
+
+  // 计算时间轴总宽度
+  const timelineWidth = (maxX - baseX) * TIMELINE_SCALE;
 
   // 扩展 lanes（超过 5 行时自动增加）
   const laneHeight = 80;
@@ -61,8 +67,8 @@ function computePositions(nodes) {
   const initialLanes = 5;
   let laneLastX = new Array(initialLanes).fill(baseX);
 
-  // 碰撞阈值（年份差距）
-  const yearGapThreshold = 100;
+  // 碰撞阈值（加权年份差距）
+  const yearGapThreshold = 50;
 
   // 按年份排序节点
   const sortedNodes = [...nodes].sort((a, b) => a.year - b.year);
@@ -71,9 +77,9 @@ function computePositions(nodes) {
   const positions = {};
 
   sortedNodes.forEach(n => {
-    // X 坐标基于年份（时间从左到右），时间轴拉长 5 倍
-    const xRatio = (n.year - minYear) / yearRange;
-    const x = Math.round(baseX + xRatio * (maxX - baseX) * 5);
+    // X 坐标基于加权年份（与前端时间轴计算方式一致）
+    const weightedYear = yearToWeightedYear(n.year, timelineConfig);
+    const x = Math.round(baseX + (weightedYear / totalWeightedYears) * timelineWidth);
 
     // 确保 laneLastX 有足够长度
     const ensureLanes = (lanes) => {
@@ -103,7 +109,7 @@ function computePositions(nodes) {
     positions[n.id] = { x, y, lane: assignedLane };
   });
 
-  return { positions, svgWidth, svgHeight, eraRanges: ERA_RANGES, minYear, maxYear };
+  return { positions, eraRanges: timelineConfig };
 }
 
 // API Routes
@@ -118,6 +124,10 @@ app.get('/api/categories', (req, res) => {
 app.get('/api/positions', (req, res) => {
   const result = computePositions(nodesData);
   res.json(result);
+});
+
+app.get('/api/timeline-config', (req, res) => {
+  res.json(timelineConfig);
 });
 
 app.get('/api/adjacency', (req, res) => {

@@ -47,5 +47,11 @@ export async function fetchAllData() {
     fetchPositions(),
     fetchAdjacency(),
   ]);
-  return { nodes, categories, positions: positions.positions, ...adjacency };
+  return {
+    nodes,
+    categories,
+    positions: positions.positions,
+    timelineConfig: positions.eraRanges,
+    ...adjacency,
+  };
 }

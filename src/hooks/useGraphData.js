@@ -13,6 +13,7 @@ export function useGraphData() {
   const [ADJ, setADJ] = useState({});
   const [RADJ, setRADJ] = useState({});
   const [NMAP, setNMAP] = useState({});
+  const [timelineConfig, setTimelineConfig] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -25,6 +26,7 @@ export function useGraphData() {
         setADJ(data.adj);
         setRADJ(data.radj);
         setNMAP(data.nmap);
+        setTimelineConfig(data.timelineConfig);
         setLoading(false);
       })
       .catch(err => {
@@ -34,5 +36,5 @@ export function useGraphData() {
       });
   }, []);
 
-  return { NODES, POS, CAT, ADJ, RADJ, NMAP, loading, error };
+  return { NODES, POS, CAT, ADJ, RADJ, NMAP, timelineConfig, loading, error };
 }

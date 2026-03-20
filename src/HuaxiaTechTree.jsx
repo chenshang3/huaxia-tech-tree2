@@ -30,7 +30,7 @@ import { deriveEdges } from "./utils/graphUtils";
 
 export default function HuaxiaTechTree() {
   const [tab, setTab] = useState("graph");
-  const { NODES, POS, CAT, ADJ, RADJ, NMAP, loading, error } = useGraphData();
+  const { NODES, POS, CAT, ADJ, RADJ, NMAP, timelineConfig, loading, error } = useGraphData();
 
   const {
     pan,
@@ -136,6 +136,7 @@ export default function HuaxiaTechTree() {
               actions={actions}
               viewportRef={viewportRef}
               isDragging={isDragging}
+              timelineConfig={timelineConfig}
             />
           ) : (
             <AdjListView
