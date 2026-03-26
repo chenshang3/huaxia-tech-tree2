@@ -16,6 +16,7 @@ import { useGraphData } from "./hooks/useGraphData";
 import { usePanZoom } from "./hooks/usePanZoom";
 import { useTraversal } from "./hooks/useTraversal";
 import { useAutoPlay } from "./hooks/useAutoPlay";
+import { useIdleTimer } from "./hooks/useIdleTimer";
 
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
@@ -30,6 +31,37 @@ import { deriveEdges } from "./utils/graphUtils";
 
 export default function HuaxiaTechTree() {
   const [tab, setTab] = useState("graph");
+  const [leftOpen, setLeftOpen] = useState(true);
+  const [rightOpen, setRightOpen] = useState(true);
+  const [autoCollapse, setAutoCollapse] = useState(false);
+  const [idleTimeout, setIdleTimeout] = useState(15000);
+
+  const isIdle = useIdleTimer(idleTimeout, autoCollapse);
+
+  const [prevIdle, setPrevIdle] = useState(false);
+
+  useEffect(() => {
+    if (autoCollapse && isIdle) {
+      setLeftOpen(false);
+      setRightOpen(false);
+    }
+  }, [autoCollapse, isIdle]);
+
+  useEffect(() => {
+    if (!autoCollapse) {
+      setLeftOpen(true);
+      setRightOpen(true);
+    }
+  }, [autoCollapse]);
+
+  useEffect(() => {
+    if (autoCollapse && prevIdle && !isIdle) {
+      setLeftOpen(true);
+      setRightOpen(true);
+    }
+    setPrevIdle(isIdle);
+  }, [autoCollapse, isIdle, prevIdle]);
+
   const { NODES, POS, CAT, ADJ, RADJ, NMAP, timelineConfig, loading, error } = useGraphData();
 
   const {
@@ -119,6 +151,10 @@ export default function HuaxiaTechTree() {
         setSteps={setSteps}
         setSi={setSi}
         setPlaying={setPlaying}
+        autoCollapse={autoCollapse}
+        setAutoCollapse={setAutoCollapse}
+        idleTimeout={idleTimeout}
+        setIdleTimeout={setIdleTimeout}
       />
 
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
@@ -133,6 +169,8 @@ export default function HuaxiaTechTree() {
           setSi={setSi}
           setPlaying={setPlaying}
           setSteps={setSteps}
+          isOpen={leftOpen}
+          setIsOpen={setLeftOpen}
         />
 
         <main
@@ -205,6 +243,8 @@ export default function HuaxiaTechTree() {
           RADJ={RADJ}
           NMAP={NMAP}
           onNode={onNode}
+          isOpen={rightOpen}
+          setIsOpen={setRightOpen}
         />
       </div>
 

@@ -17,21 +17,48 @@ export function Sidebar({
   setSi,
   setPlaying,
   setSteps,
+  isOpen,
+  setIsOpen,
 }) {
   return (
-    <aside
-      style={{
-        width: 172,
-        flexShrink: 0,
-        display: "flex",
-        flexDirection: "column",
-        background: "rgba(255,252,248,.95)",
-        borderRight: "1px solid rgba(200,160,69,.15)",
-        padding: "14px 12px",
-        gap: 9,
-        overflow: "auto",
-      }}
-    >
+    <>
+      <button
+        onClick={() => setIsOpen(p => !p)}
+        style={{
+          position: "absolute",
+          left: isOpen ? 170 : 0,
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: 20,
+          height: 40,
+          background: isOpen ? "rgba(200,160,69,.15)" : "rgba(200,160,69,.3)",
+          border: "1px solid rgba(200,160,69,.3)",
+          borderRadius: isOpen ? "0 4px 4px 0" : "0 4px 4px 0",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          zIndex: 10,
+          transition: "left 0.25s ease, background 0.2s ease",
+          padding: 0,
+        }}
+      >
+        <span style={{ color: "#8b6914", fontSize: 10 }}>{isOpen ? "«" : "»"}</span>
+      </button>
+      <aside
+        style={{
+          width: isOpen ? 172 : 0,
+          flexShrink: 0,
+          display: "flex",
+          flexDirection: "column",
+          background: "rgba(255,252,248,.95)",
+          borderRight: "1px solid rgba(200,160,69,.15)",
+          padding: isOpen ? "14px 12px" : "14px 0",
+          gap: 9,
+          overflow: "hidden",
+          transition: "width 0.25s ease, padding 0.25s ease",
+        }}
+      >
       <Sec title="节点类别">
         {Object.entries(CAT).map(([k, { color, label }]) => (
           <div
@@ -166,5 +193,6 @@ export function Sidebar({
         </Sec>
       )}
     </aside>
+    </>
   );
 }
