@@ -8,7 +8,7 @@ export const NODE_RADIUS = 28;
 export const VIEW_BOX = "0 0 1200 640";
 
 export const MIN_SCALE = 0.5;
-export const MAX_SCALE = 2;
+export const MAX_SCALE = 1.5;
 
 export const ZOOM_FACTOR = 1.05; // 滚轮缩放倍数
 export const SCALE_BUTTON_FACTOR_IN = 1.2;

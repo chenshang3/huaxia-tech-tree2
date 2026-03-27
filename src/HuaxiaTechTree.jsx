@@ -90,6 +90,13 @@ export default function HuaxiaTechTree() {
 
   useAutoPlay(playing, steps.length, setSi, setPlaying);
 
+  // sel 变化时自动平移到目标节点
+  useEffect(() => {
+    if (sel && POS[sel]) {
+      actions.panToNode(sel, POS);
+    }
+  }, [sel, POS, actions.panToNode]);
+
   const EDGES = useMemo(() => deriveEdges(NODES, ADJ), [NODES, ADJ]);
   const step = steps[si] ?? null;
   const selD = sel ? NMAP[sel] : null;

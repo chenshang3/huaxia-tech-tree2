@@ -1,8 +1,3 @@
-// ============================================================
-// usePanZoom.js
-// 画布平移与缩放逻辑
-// ============================================================
-
 import { useState, useCallback, useRef } from "react";
 import {
   MIN_SCALE,
@@ -18,55 +13,72 @@ export function usePanZoom() {
   const [scale, setScale] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
 
-  // 绑定到 svg 或画布容器上，用于获取画布中心点
   const viewportRef = useRef(null);
 
   const panRef = useRef({
     x: 0,
     y: 0,
     dragging: false,
-    startX: 0,
+    startX: 0, // 改成存 SVG 坐标
     startY: 0,
   });
 
   const scaleRef = useRef(1);
+  const animTargetRef = useRef(null);
 
-  // pan x 范围限制配置：节点世界坐标和视口宽度
-  // 约束：pan.x + minNodeX * scale >= viewportWidth / 2
-  //       pan.x + maxNodeX * scale <= viewportWidth / 2
-  const boundsConfigRef = useRef({ minNodeX: 0, maxNodeX: 0, viewportWidth: Infinity });
+  const boundsConfigRef = useRef({
+    minNodeX: 0,
+    maxNodeX: 0,
+    viewportWidth: Infinity, // 这里也应该是 SVG 坐标宽度
+  });
 
-  // 设置动态 bounds 配置（节点坐标和视口宽度）
   const setBoundsConfig = useCallback((minNodeX, maxNodeX, viewportWidth) => {
     boundsConfigRef.current = { minNodeX, maxNodeX, viewportWidth };
   }, []);
 
-  // 根据当前 scale 动态计算并应用 pan x 范围限制
   const clampPanX = useCallback((x) => {
     const { minNodeX, maxNodeX, viewportWidth } = boundsConfigRef.current;
     const currentScale = scaleRef.current;
     if (!isFinite(viewportWidth)) return x;
 
-    // 左侧：最左节点最多到视口中央
     const minPanX = viewportWidth / 2 - maxNodeX * currentScale;
-    // 右侧：最右节点最多到视口中央
     const maxPanX = viewportWidth / 2 - minNodeX * currentScale;
 
     return Math.max(minPanX, Math.min(maxPanX, x));
   }, []);
 
-  // 通用缩放函数：以容器内某个锚点(anchorX, anchorY)进行缩放
+  // 屏幕坐标 -> SVG user space
+  const clientToSvg = useCallback((clientX, clientY) => {
+    const svg = viewportRef.current;
+    if (!svg) return null;
+
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return null;
+
+    return pt.matrixTransform(ctm.inverse());
+  }, []);
+
+  // 视口中心，返回 SVG 坐标
+  const getViewportCenter = useCallback(() => {
+    const svg = viewportRef.current;
+    if (!svg) return null;
+
+    const rect = svg.getBoundingClientRect();
+    return clientToSvg(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  }, [clientToSvg]);
+
   const zoomAt = useCallback((anchorX, anchorY, targetScale) => {
     const oldScale = scaleRef.current;
     const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, targetScale));
-
     if (newScale === oldScale) return;
 
-    // 缩放前，锚点对应的“世界坐标 / 画布坐标”
     const worldX = (anchorX - panRef.current.x) / oldScale;
     const worldY = (anchorY - panRef.current.y) / oldScale;
 
-    // 缩放后重新计算 pan，让这个世界坐标仍然停留在 anchor 上
     const newPanX = clampPanX(anchorX - worldX * newScale);
     const newPanY = anchorY - worldY * newScale;
 
@@ -80,58 +92,47 @@ export function usePanZoom() {
     setScale(newScale);
     setPan({ x: newPanX, y: newPanY });
     setTimelinePanX(newPanX);
-  }, []);
+  }, [clampPanX]);
 
-  // 获取画布中心点（相对当前容器左上角）
-  const getViewportCenter = useCallback(() => {
-    const el = viewportRef.current;
-    if (!el) return null;
+  const onWheel = useCallback((e) => {
+    e.preventDefault();
 
-    const rect = el.getBoundingClientRect();
-    return {
-      x: rect.width / 2,
-      y: rect.height / 2,
-    };
-  }, []);
+    const factor = e.deltaY > 0 ? 1 / ZOOM_FACTOR : ZOOM_FACTOR;
+    const nextScale = scaleRef.current * factor;
 
-  // 鼠标滚轮缩放：以鼠标位置为中心
-  const onWheel = useCallback(
-    (e) => {
-      e.preventDefault();
+    const anchor = clientToSvg(e.clientX, e.clientY);
+    if (!anchor) return;
 
-      const factor = e.deltaY > 0 ? 1 / ZOOM_FACTOR : ZOOM_FACTOR;
-      const nextScale = scaleRef.current * factor;
-
-      const rect = e.currentTarget.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-
-      zoomAt(mouseX, mouseY, nextScale);
-    },
-    [zoomAt]
-  );
+    zoomAt(anchor.x, anchor.y, nextScale);
+  }, [clientToSvg, zoomAt]);
 
   const onMouseDown = useCallback((e) => {
     if (e.button !== 0) return;
 
+    const p = clientToSvg(e.clientX, e.clientY);
+    if (!p) return;
+
     panRef.current = {
       ...panRef.current,
       dragging: true,
-      startX: e.clientX,
-      startY: e.clientY,
+      startX: p.x,
+      startY: p.y,
     };
 
     setIsDragging(true);
-  }, []);
+  }, [clientToSvg]);
 
   const onMouseMove = useCallback((e) => {
     if (!panRef.current.dragging) return;
 
-    const dx = e.clientX - panRef.current.startX;
-    const dy = e.clientY - panRef.current.startY;
+    const p = clientToSvg(e.clientX, e.clientY);
+    if (!p) return;
 
-    panRef.current.startX = e.clientX;
-    panRef.current.startY = e.clientY;
+    const dx = p.x - panRef.current.startX;
+    const dy = p.y - panRef.current.startY;
+
+    panRef.current.startX = p.x;
+    panRef.current.startY = p.y;
 
     const newPan = {
       x: clampPanX(panRef.current.x + dx),
@@ -146,7 +147,7 @@ export function usePanZoom() {
 
     setPan(newPan);
     setTimelinePanX(newPan.x);
-  }, []);
+  }, [clientToSvg, clampPanX]);
 
   const onMouseUp = useCallback(() => {
     panRef.current = {
@@ -164,25 +165,24 @@ export function usePanZoom() {
     setIsDragging(false);
   }, []);
 
-  // 按钮放大：以画布中心为中心
   const zoomIn = useCallback(() => {
     const center = getViewportCenter();
     if (!center) return;
-
-    const nextScale = scaleRef.current * SCALE_BUTTON_FACTOR_IN;
-    zoomAt(center.x, center.y, nextScale);
+    zoomAt(center.x, center.y, scaleRef.current * SCALE_BUTTON_FACTOR_IN);
   }, [getViewportCenter, zoomAt]);
 
-  // 按钮缩小：以画布中心为中心
   const zoomOut = useCallback(() => {
     const center = getViewportCenter();
     if (!center) return;
-
-    const nextScale = scaleRef.current * SCALE_BUTTON_FACTOR_OUT;
-    zoomAt(center.x, center.y, nextScale);
+    zoomAt(center.x, center.y, scaleRef.current * SCALE_BUTTON_FACTOR_OUT);
   }, [getViewportCenter, zoomAt]);
 
   const resetView = useCallback(() => {
+    if (animTargetRef.current) {
+      cancelAnimationFrame(animTargetRef.current);
+      animTargetRef.current = null;
+    }
+
     panRef.current = {
       x: 0,
       y: 0,
@@ -198,6 +198,61 @@ export function usePanZoom() {
     setTimelinePanX(0);
     setIsDragging(false);
   }, []);
+
+  const easeOutExpoNormalized = (t) => {
+    if (t >= 1) return 1;
+    const k = 5;
+    return (1 - Math.exp(-k * t)) / (1 - Math.exp(-k));
+  };
+
+  const panToNode = useCallback((nodeId, POS) => {
+    const nodePos = POS[nodeId];
+    if (!nodePos) return;
+
+    const center = getViewportCenter();
+    if (!center) return;
+
+    if (animTargetRef.current) {
+      cancelAnimationFrame(animTargetRef.current);
+      animTargetRef.current = null;
+    }
+
+    const startPanX = clampPanX(panRef.current.x);
+    const startPanY = panRef.current.y;
+
+    const targetPanX = clampPanX(center.x - nodePos.x * scaleRef.current);
+    const targetPanY = center.y - nodePos.y * scaleRef.current;
+
+    // 起点先规范化，避免动画第一帧纠偏
+    if (startPanX !== panRef.current.x) {
+      panRef.current = { ...panRef.current, x: startPanX, y: startPanY };
+      setPan({ x: startPanX, y: startPanY });
+      setTimelinePanX(startPanX);
+    }
+
+    const startTime = performance.now();
+    const duration = 400;
+
+    const animate = (now) => {
+      const t = Math.min((now - startTime) / duration, 1);
+      const ease = easeOutExpoNormalized(t);
+
+      const nextPanX = clampPanX(startPanX + (targetPanX - startPanX) * ease);
+      const nextPanY = startPanY + (targetPanY - startPanY) * ease;
+
+      panRef.current = { ...panRef.current, x: nextPanX, y: nextPanY };
+      setPan({ x: nextPanX, y: nextPanY });
+      setTimelinePanX(nextPanX);
+
+      if (t < 1) {
+        animTargetRef.current = requestAnimationFrame(animate);
+      } else {
+        animTargetRef.current = null;
+      }
+    };
+
+    animTargetRef.current = requestAnimationFrame(animate);
+  }, [getViewportCenter, clampPanX]);
 
   return {
     pan,
@@ -220,6 +275,7 @@ export function usePanZoom() {
       zoomIn,
       zoomOut,
       resetView,
+      panToNode,
     },
   };
 }

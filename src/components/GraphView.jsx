@@ -94,6 +94,7 @@ export function GraphView({
             const p = POS[node.id];
             const st = nState(node.id, step, mode);
             const cc = CAT[node.cat]?.color ?? "#c8a045";
+            const isSel = sel === node.id;
             const rc =
               st === "current"
                 ? "#e74c3c"
@@ -101,11 +102,12 @@ export function GraphView({
                   ? "#c8a045"
                   : st === "queued"
                     ? "#4a90d9"
-                    : st === "stacked"
-                      ? "#2ecc71"
+                  : st === "stacked"
+                    ? "#2ecc71"
+                    : isSel && mode === "explore"
+                      ? "#e74c3c"
                       : cc;
             const rw = st !== "idle" ? 2.5 : 1.8;
-            const isSel = sel === node.id;
             const nm = node.name;
             const nl = nm.length;
 
@@ -335,6 +337,23 @@ export function GraphView({
           }}
         >
           −
+        </button>
+
+        <button
+          onClick={() => sel && actions.panToNode(sel, POS)}
+          title="回到当前节点"
+          style={{
+            width: 28,
+            height: 28,
+            background: "rgba(255,252,245,.92)",
+            color: "#8b6914",
+            border: "1px solid rgba(200,160,69,.3)",
+            borderRadius: 4,
+            fontSize: 11,
+            boxShadow: "0 2px 6px rgba(0,0,0,.06)",
+          }}
+        >
+          ◎
         </button>
 
         <button
