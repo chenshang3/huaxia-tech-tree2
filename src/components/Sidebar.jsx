@@ -3,10 +3,11 @@
 // 左侧边栏组件
 // ============================================================
 
+import React from "react";
 import { Sec } from "./ui/Sec";
 import { Mono } from "./ui/Mono";
 
-export function Sidebar({
+export const Sidebar = React.memo(function Sidebar({
   CAT,
   NODES,
   EDGES,
@@ -59,6 +60,14 @@ export function Sidebar({
           transition: "width 0.25s ease, padding 0.25s ease",
         }}
       >
+        <div style={{
+          opacity: isOpen ? 1 : 0,
+          transition: "opacity 0.2s ease 0.15s",
+          pointerEvents: isOpen ? "auto" : "none",
+          display: "flex",
+          flexDirection: "column",
+          gap: 9,
+        }}>
       <Sec title="节点类别">
         {Object.entries(CAT).map(([k, { color, label }]) => (
           <div
@@ -192,7 +201,8 @@ export function Sidebar({
           )}
         </Sec>
       )}
-    </aside>
+        </div>
+      </aside>
     </>
   );
-}
+});

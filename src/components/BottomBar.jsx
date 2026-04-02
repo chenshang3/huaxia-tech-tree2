@@ -1,9 +1,11 @@
+import React from "react";
+
 // ============================================================
 // BottomBar.jsx
 // 底部 BFS/DFS 数据结构可视化栏
 // ============================================================
 
-export function BottomBar({ step, mode, NMAP }) {
+export const BottomBar = React.memo(function BottomBar({ step, mode, NMAP }) {
   if (!step || mode === "explore") return null;
 
   const items = mode === "bfs" ? step.queue : [...(step.stack ?? [])].reverse();
@@ -142,4 +144,4 @@ export function BottomBar({ step, mode, NMAP }) {
       </div>
     </div>
   );
-}
+});

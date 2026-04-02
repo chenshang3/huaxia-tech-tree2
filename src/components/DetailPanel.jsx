@@ -1,9 +1,11 @@
+import React from "react";
+
 // ============================================================
 // DetailPanel.jsx
 // 右侧详情面板组件
 // ============================================================
 
-export function DetailPanel({ selD, CAT, ADJ, RADJ, NMAP, onNode, isOpen, setIsOpen }) {
+export const DetailPanel = React.memo(function DetailPanel({ selD, CAT, ADJ, RADJ, NMAP, onNode, isOpen, setIsOpen }) {
   return (
     <>
       <button
@@ -43,6 +45,14 @@ export function DetailPanel({ selD, CAT, ADJ, RADJ, NMAP, onNode, isOpen, setIsO
           transition: "width 0.25s ease, padding 0.25s ease",
         }}
       >
+        <div style={{
+          opacity: isOpen ? 1 : 0,
+          transition: "opacity 0.2s ease 0.15s",
+          pointerEvents: isOpen ? "auto" : "none",
+          display: "flex",
+          flexDirection: "column",
+          gap: 11,
+        }}>
       {selD ? (
         <div style={{ animation: "fadeIn .3s ease" }}>
           <div
@@ -265,7 +275,8 @@ export function DetailPanel({ selD, CAT, ADJ, RADJ, NMAP, onNode, isOpen, setIsO
           </div>
         </div>
       )}
-    </aside>
+        </div>
+      </aside>
     </>
   );
-}
+});

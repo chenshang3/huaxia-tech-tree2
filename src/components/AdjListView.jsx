@@ -1,9 +1,11 @@
+import React from "react";
+
 // ============================================================
 // AdjListView.jsx
 // 邻接表代码风格视图
 // ============================================================
 
-export function AdjListView({ NODES, ADJ, CAT, step, onNode }) {
+export const AdjListView = React.memo(function AdjListView({ NODES, ADJ, CAT, step, onNode }) {
   return (
     <div
       style={{
@@ -99,4 +101,4 @@ export function AdjListView({ NODES, ADJ, CAT, step, onNode }) {
       })}
     </div>
   );
-}
+});

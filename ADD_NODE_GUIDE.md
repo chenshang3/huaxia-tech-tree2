@@ -8,7 +8,7 @@
 
 ### 1. 添加节点
 
-打开 `src/data/nodes.json`，在数组末尾添加新节点：
+打开 `server/data/nodes.json`，在数组中添加新节点：
 
 ```json
 {
@@ -16,37 +16,21 @@
   "name": "节点名称",
   "en": "English Name",
   "era": "所属朝代",
-  "year": "年份",
-  "layer": "层级",
+  "year": -2000,
   "cat": "分类key",
   "inv": "发明者",
   "desc": "简介内容...",
-  "sig": "历史意义..."
+  "sig": "历史意义...",
+  "outEdges": ["依赖节点id1", "依赖节点id2"]
 }
 ```
 
-### 2. 添加关联边（可选）
-
-如果新技术与其他节点有依赖关系，打开 `src/data/edges.json`，添加边：
-
-```json
-{ "from": "前置节点id", "to": "新节点id" }
-```
-
-### 3. 添加坐标（可选）
-
-如果需要在图上显示，打开 `src/data/positions.json`，添加坐标：
-
-```json
-"your_node_id": { "x": X坐标, "y": Y坐标 }
-```
-
-### 4. 验证
+### 2. 验证
 
 运行以下命令查看效果：
 
 ```bash
-npm start
+npm run dev
 ```
 
 ---
@@ -60,60 +44,38 @@ npm start
 | `en` | 是 | 英文名称 | `Papermaking` |
 | `era` | 是 | 所属朝代 | `东汉` |
 | `year` | 是 | 发明年份（负数=公元前） | `-105` 或 `105` |
-| `layer` | 是 | 层级（0-4），决定垂直位置 | `2` |
-| `cat` | 是 | 分类，对应 categories.json 的 key | `culture` |
+| `cat` | 是 | 分类，对应 `server/data/categories.json` 中的 `code` | `culture` |
 | `inv` | 是 | 发明/改进者 | `蔡伦` |
 | `desc` | 是 | 简介，50-200字 | `蔡伦改进造纸术...` |
 | `sig` | 是 | 历史意义，20-50字 | `四大发明之一...` |
+| `outEdges` | 否 | 前置技术节点 ID 列表（依赖关系） | `["bronze", "casting"]` |
 
 ---
 
 ## 分类列表
 
-在 `src/data/categories.json` 中定义：
+在 `server/data/categories.json` 中定义：
 
-| key | 标签 | 颜色 |
-|-----|------|------|
-| `craft` | 工艺 | 橙色 |
-| `textile` | 纺织 | 红色 |
-| `metallurgy` | 冶金 | 灰色 |
-| `culture` | 文化 | 蓝色 |
-| `navigation` | 航海 | 青色 |
-| `medicine` | 医学 | 绿色 |
-| `math` | 数学 | 紫色 |
-| `military` | 军事 | 红色 |
-| `science` | 科学 | 蓝色 |
-| `trade` | 贸易 | 橙色 |
-| `engineering` | 工程 | 棕色 |
-
----
-
-## 层级说明
-
-| layer | 时代 |
-|-------|------|
-| 0 | 先秦以前 |
-| 1 | 春秋汉代 |
-| 2 | 两汉时期 |
-| 3 | 隋唐时期 |
-| 4 | 宋朝以降 |
-
----
-
-## 坐标参考
-
-图谱视图大小：`920 x 580`
-
-- **X轴范围**：90 ~ 810（每列约90像素间隔）
-- **Y轴范围**：68 ~ 530（按朝代分层）
-
-如果不确定坐标，可以先不填，运行后在浏览器开发者工具中调整满意后再填入。
+| key | 标签 |
+|-----|------|
+| `craft` | 工艺 |
+| `metallurgy` | 冶金 |
+| `culture` | 文化 |
+| `science` | 科学 |
+| `medicine` | 医学 |
+| `engineering` | 工程 |
+| `military` | 军事 |
+| `navigation` | 导航 |
+| `textile` | 纺织 |
+| `trade` | 贸易 |
+| `agriculture` | 农业 |
+| `math` | 数学 |
 
 ---
 
 ## 示例：添加"丝绸"
 
-### 步骤1：在 nodes.json 添加
+在 `server/data/nodes.json` 中添加：
 
 ```json
 {
@@ -122,38 +84,31 @@ npm start
   "en": "Silk",
   "era": "黄帝时期",
   "year": -2700,
-  "layer": 0,
   "cat": "textile",
   "inv": "嫘祖",
   "desc": "中国丝绸历史悠久...",
-  "sig": "丝绸之路的核心商品..."
+  "sig": "丝绸之路的核心商品...",
+  "outEdges": ["silkroad", "porcelain", "embroidery"]
 }
 ```
 
-### 步骤2：在 edges.json 添加依赖（可选）
-
-```json
-{ "from": "silk", "to": "silkroad" }
-```
-
-### 步骤3：在 positions.json 添加坐标
-
-```json
-"silk": { "x": 280, "y": 68 }
-```
+添加完成后，重启后端服务即可看到效果。坐标和边关系会自动计算，无需手动设置。
 
 ---
 
 ## 常见问题
 
 **Q: 添加节点后图上不显示？**
-A: 检查是否在 positions.json 中添加了坐标
+A: 检查 JSON 语法是否正确，重启后端服务（`npm run dev`）
 
 **Q: 节点点击无反应？**
 A: 检查 id 是否唯一，是否有语法错误
 
 **Q: 如何删除节点？**
-A: 从 nodes.json 删除节点，从 edges.json 删除相关边，从 positions.json 删除坐标
+A: 从 `server/data/nodes.json` 中删除该节点，同时检查其他节点的 `outEdges` 是否引用了被删除的 id，如有则一并移除
 
 **Q: 如何修改现有节点？**
-A: 直接编辑对应的 JSON 文件，保存后自动更新
+A: 直接编辑 `server/data/nodes.json`，保存后重启后端服务即可
+
+**Q: 节点坐标怎么设置？**
+A: 坐标由后端根据年份自动计算，无需手动设置。年份越早越靠左，越晚越靠右

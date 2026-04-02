@@ -3,9 +3,10 @@
 // 顶部导航栏组件
 // ============================================================
 
+import React from "react";
 import { Btn } from "./ui/Btn";
 
-export function Header({ mode, setMode, tab, setTab, setSteps, setSi, setPlaying, autoCollapse, setAutoCollapse, idleTimeout, setIdleTimeout }) {
+export const Header = React.memo(function Header({ mode, setMode, tab, setTab, setSteps, setSi, setPlaying, autoCollapse, setAutoCollapse, idleTimeout, setIdleTimeout }) {
   const handleModeChange = (newMode) => {
     setMode(newMode);
     setSteps([]);
@@ -121,4 +122,4 @@ export function Header({ mode, setMode, tab, setTab, setSteps, setSi, setPlaying
       </div>
     </header>
   );
-}
+});

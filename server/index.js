@@ -7,7 +7,7 @@ const categoriesData = require('./data/categories.json');
 const timelineConfig = require('./data/timelineConfig.json');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(cors());

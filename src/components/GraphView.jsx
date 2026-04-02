@@ -3,10 +3,11 @@
 // SVG 知识图谱渲染组件
 // ============================================================
 
+import React from "react";
 import { NODE_RADIUS, VIEW_BOX } from "../utils/constants";
 import { nState, eState, edgePath } from "../utils/graphUtils";
 
-export function GraphView({
+export const GraphView = React.memo(function GraphView({
   NODES,
   POS,
   CAT,
@@ -374,4 +375,4 @@ export function GraphView({
       </div>
     </>
   );
-}
+});
