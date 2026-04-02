@@ -53,6 +53,8 @@ export const GraphView = React.memo(function GraphView({
             ["a0", "rgba(139,105,20,.35)"],
             ["aD", "rgba(139,105,20,.7)"],
             ["aA", "#e74c3c"],
+            ["aP", "#e74c3c"],
+            ["aO", "#e67e22"],
           ].map(([id, fill]) => (
             <marker key={id} id={id} markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
               <path d="M0,0 L0,6 L6,3z" fill={fill} />
@@ -70,13 +72,19 @@ export const GraphView = React.memo(function GraphView({
 
         <g transform={`translate(${pan.x},${pan.y}) scale(${scale})`}>
           {EDGES.map((e, i) => {
-            const st = eState(e.from, e.to, step);
-            const [clr, sw, mk] =
+            const st = eState(e.from, e.to, step, mode);
+            const [clr, sw, mk, opacity] =
               st === "active"
-                ? ["#e74c3c", 2.5, "aA"]
-                : st === "done"
-                  ? ["rgba(139,105,20,.55)", 1.8, "aD"]
-                  : ["rgba(139,105,20,.18)", 1.2, "a0"];
+                ? ["#e74c3c", 2.5, "aA", 1]
+              : st === "path"
+                ? ["#e74c3c", 3.5, "aP", 1]
+              : st === "done"
+                ? ["#e67e22", 2.0, "aO", 1]
+              : st === "idle"
+                ? ["rgba(139,105,20,.35)", 1.5, "a0", 1]
+              : st === "faded"
+                ? ["rgba(139,105,20,.18)", 1.0, "a0", 0.25]
+              : ["rgba(139,105,20,.35)", 1.5, "a0", 1];
 
             return (
               <path
@@ -86,7 +94,8 @@ export const GraphView = React.memo(function GraphView({
                 stroke={clr}
                 strokeWidth={sw}
                 markerEnd={`url(#${mk})`}
-                style={{ transition: "stroke .35s,stroke-width .35s" }}
+                opacity={opacity}
+                style={{ transition: "stroke .35s,stroke-width .35s,opacity .35s" }}
               />
             );
           })}
@@ -99,16 +108,18 @@ export const GraphView = React.memo(function GraphView({
             const rc =
               st === "current"
                 ? "#e74c3c"
-                : st === "visited"
-                  ? "#c8a045"
-                  : st === "queued"
-                    ? "#4a90d9"
-                  : st === "stacked"
-                    ? "#2ecc71"
-                    : isSel && mode === "explore"
-                      ? "#e74c3c"
-                      : cc;
-            const rw = st !== "idle" ? 2.5 : 1.8;
+              : st === "visited"
+                ? "#e67e22"
+              : st === "queued"
+                ? "#4a90d9"
+              : st === "stacked"
+                ? "#2ecc71"
+              : st === "faded"
+                ? "rgba(139,105,20,.5)"
+              : isSel && mode === "explore"
+                ? "#e74c3c"
+              : cc;
+            const rw = st !== "idle" && st !== "faded" ? 2.5 : 1.8;
             const nm = node.name;
             const nl = nm.length;
 
@@ -140,35 +151,36 @@ export const GraphView = React.memo(function GraphView({
                   <circle
                     r={NODE_RADIUS + 7}
                     fill={isSel && st === "idle" ? "#c8a045" : rc}
-                    opacity=".1"
+                    opacity={st === "faded" ? ".05" : ".1"}
                   />
                 )}
 
-                <circle r={NODE_RADIUS} fill="#fffef8" />
+                <circle r={NODE_RADIUS} fill="#fffef8" opacity={st === "faded" ? 0.4 : 1} />
                 <circle
                   r={NODE_RADIUS}
                   fill="none"
                   stroke={rc}
                   strokeWidth={rw}
-                  style={{ transition: "stroke .3s" }}
+                  opacity={st === "faded" ? 0.4 : 1}
+                  style={{ transition: "stroke .3s,opacity .3s" }}
                 />
 
                 {nl <= 3 && (
-                  <text y="3" textAnchor="middle" fontSize="11" fill="#2c2416" fontFamily='"Noto Serif SC"' fontWeight="700">
+                  <text y="3" textAnchor="middle" fontSize="11" fill="#2c2416" fontFamily='"Noto Serif SC"' fontWeight="700" opacity={st === "faded" ? 0.4 : 1}>
                     {nm}
                   </text>
                 )}
                 {nl === 4 && (
-                  <text y="3" textAnchor="middle" fontSize="9.5" fill="#2c2416" fontFamily='"Noto Serif SC"' fontWeight="700">
+                  <text y="3" textAnchor="middle" fontSize="9.5" fill="#2c2416" fontFamily='"Noto Serif SC"' fontWeight="700" opacity={st === "faded" ? 0.4 : 1}>
                     {nm}
                   </text>
                 )}
                 {nl > 4 && (
                   <>
-                    <text y="-6" textAnchor="middle" fontSize="9" fill="#2c2416" fontFamily='"Noto Serif SC"' fontWeight="700">
+                    <text y="-6" textAnchor="middle" fontSize="9" fill="#2c2416" fontFamily='"Noto Serif SC"' fontWeight="700" opacity={st === "faded" ? 0.4 : 1}>
                       {nm.slice(0, 4)}
                     </text>
-                    <text y="5" textAnchor="middle" fontSize="9" fill="#2c2416" fontFamily='"Noto Serif SC"' fontWeight="700">
+                    <text y="5" textAnchor="middle" fontSize="9" fill="#2c2416" fontFamily='"Noto Serif SC"' fontWeight="700" opacity={st === "faded" ? 0.4 : 1}>
                       {nm.slice(4)}
                     </text>
                   </>
@@ -180,6 +192,7 @@ export const GraphView = React.memo(function GraphView({
                   fontSize="8"
                   fill="rgba(90,74,56,.5)"
                   fontFamily='"JetBrains Mono"'
+                  opacity={st === "faded" ? 0.4 : 1}
                 >
                   {node.year < 0 ? `${Math.abs(node.year)}BC` : `${node.year}AD`}
                 </text>

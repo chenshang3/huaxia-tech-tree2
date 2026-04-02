@@ -134,6 +134,17 @@ app.get('/api/adjacency', (req, res) => {
   res.json({ adj: ADJ, radj: RADJ, nmap: NMAP });
 });
 
+// 路径重建辅助函数
+function reconstructPath(node, parent) {
+  const path = [];
+  let current = node;
+  while (current !== null && current !== undefined) {
+    path.unshift(current);
+    current = parent[current];
+  }
+  return path;
+}
+
 // BFS 算法
 app.post('/api/algorithms/bfs', (req, res) => {
   const { start } = req.body;
@@ -141,18 +152,48 @@ app.post('/api/algorithms/bfs', (req, res) => {
     return res.status(400).json({ error: 'Invalid start node' });
   }
 
-  const steps = [];
-  const vis = new Set([start]);
-  const q = [start];
-
-  while (q.length) {
-    const cur = q.shift();
-    const fresh = (ADJ[cur] || []).filter(n => !vis.has(n));
-    fresh.forEach(n => {
-      vis.add(n);
-      q.push(n);
+  // 第一步：预先计算整个可达子树
+  const discovered = new Set([start]);
+  const discoverQueue = [start];
+  while (discoverQueue.length) {
+    const cur = discoverQueue.shift();
+    (ADJ[cur] || []).forEach(n => {
+      if (!discovered.has(n)) {
+        discovered.add(n);
+        discoverQueue.push(n);
+      }
     });
-    steps.push({ cur, queue: [...q], visited: [...vis], fresh, ds: 'queue' });
+  }
+
+  // 第二步：正式遍历动画
+  const steps = [];
+  const visited = [];  // 仅包含已出队的节点
+  const queue = [start];
+  const parent = { [start]: null };
+
+  while (queue.length) {
+    const cur = queue.shift();
+    visited.push(cur);
+
+    const fresh = (ADJ[cur] || []).filter(n => !visited.includes(n) && !queue.includes(n));
+    const isLeaf = fresh.length === 0;
+    const leafPath = isLeaf ? reconstructPath(cur, parent) : null;
+
+    fresh.forEach(n => {
+      parent[n] = cur;
+      queue.push(n);
+    });
+
+    steps.push({
+      cur,
+      queue: [...queue],
+      visited: [...visited],
+      discovered: [...discovered],
+      fresh,
+      ds: 'queue',
+      isLeaf,
+      leafPath
+    });
   }
   res.json({ steps });
 });
@@ -164,17 +205,50 @@ app.post('/api/algorithms/dfs', (req, res) => {
     return res.status(400).json({ error: 'Invalid start node' });
   }
 
-  const steps = [];
-  const vis = new Set();
-  const stk = [start];
+  // 第一步：预先计算整个可达子树（用 DFS 遍历）
+  const discovered = new Set();
+  const discoverStack = [start];
+  while (discoverStack.length) {
+    const cur = discoverStack.pop();
+    if (discovered.has(cur)) continue;
+    discovered.add(cur);
+    [...(ADJ[cur] || [])].reverse().forEach(n => {
+      if (!discovered.has(n)) {
+        discoverStack.push(n);
+      }
+    });
+  }
 
-  while (stk.length) {
-    const cur = stk.pop();
-    if (vis.has(cur)) continue;
-    vis.add(cur);
-    const fresh = [...(ADJ[cur] || [])].reverse().filter(n => !vis.has(n));
-    fresh.forEach(n => stk.push(n));
-    steps.push({ cur, stack: [...stk], visited: [...vis], fresh, ds: 'stack' });
+  // 第二步：正式遍历动画
+  const steps = [];
+  const visited = [];  // 仅包含已弹出的节点
+  const stack = [start];
+  const parent = { [start]: null };
+
+  while (stack.length) {
+    const cur = stack.pop();
+    if (visited.includes(cur)) continue;
+    visited.push(cur);
+
+    const fresh = [...(ADJ[cur] || [])].reverse().filter(n => !visited.includes(n) && !stack.includes(n));
+    const isLeaf = fresh.length === 0;
+    const leafPath = isLeaf ? reconstructPath(cur, parent) : null;
+
+    fresh.forEach(n => {
+      parent[n] = cur;
+      stack.push(n);
+    });
+
+    steps.push({
+      cur,
+      stack: [...stack],
+      visited: [...visited],
+      discovered: [...discovered],
+      fresh,
+      ds: 'stack',
+      isLeaf,
+      leafPath
+    });
   }
   res.json({ steps });
 });

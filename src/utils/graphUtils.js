@@ -10,7 +10,7 @@ import { NODE_RADIUS } from './constants';
  * @param {string} id - 节点ID
  * @param {object} step - 当前步骤快照
  * @param {string} mode - 当前模式 "explore" | "bfs" | "dfs"
- * @returns {"idle"|"current"|"visited"|"queued"|"stacked"}
+ * @returns {"idle"|"current"|"visited"|"queued"|"stacked"|"faded"}
  */
 export function nState(id, step, mode) {
   if (!step) return "idle";
@@ -18,7 +18,10 @@ export function nState(id, step, mode) {
   if (step.visited.includes(id)) return "visited";
   if (mode === "bfs" && step.queue?.includes(id)) return "queued";
   if (mode === "dfs" && step.stack?.includes(id)) return "stacked";
-  return "idle";
+  // 在 discovered 中但不在 visited/queue/stack → idle（未访问但可达）
+  if (step.discovered?.includes(id)) return "idle";
+  // 不在 discovered 中 → faded（不可达）
+  return "faded";
 }
 
 /**
@@ -26,13 +29,30 @@ export function nState(id, step, mode) {
  * @param {string} f - 起始节点ID
  * @param {string} t - 目标节点ID
  * @param {object} step - 当前步骤快照
- * @returns {"idle"|"active"|"done"}
+ * @param {string} mode - 当前模式
+ * @returns {"idle"|"active"|"done"|"faded"|"path"}
  */
-export function eState(f, t, step) {
+export function eState(f, t, step, mode) {
   if (!step) return "idle";
+
+  // 检查是否为叶子节点的父子边（只显示父->叶子的那条边为红色）
+  if (step.leafPath && step.leafPath.length >= 2) {
+    const parentIdx = step.leafPath.length - 2;
+    const parent = step.leafPath[parentIdx];
+    const leaf = step.leafPath[parentIdx + 1];
+    if (f === parent && t === leaf) return "path";
+  }
+
   if (step.cur === f && step.fresh?.includes(t)) return "active";
+
+  // 已遍历边：两端都在 visited 中
   if (step.visited.includes(f) && step.visited.includes(t)) return "done";
-  return "idle";
+
+  // idle 边：两端都在 discovered 中但还不是 done
+  if (step.discovered?.includes(f) && step.discovered?.includes(t)) return "idle";
+
+  // faded：其他（不在 discovered 中）
+  return "faded";
 }
 
 /**
