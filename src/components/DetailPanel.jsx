@@ -42,12 +42,12 @@ export const DetailPanel = React.memo(function DetailPanel({ selD, CAT, ADJ, RAD
           flexDirection: "column",
           gap: 11,
           overflow: "hidden",
-          transition: "width 0.25s ease, padding 0.25s ease",
+          transition: `width 0.25s ease ${isOpen ? '0s' : '0.1s'}, padding 0.25s ease ${isOpen ? '0s' : '0.1s'}`,
         }}
       >
         <div style={{
           opacity: isOpen ? 1 : 0,
-          transition: "opacity 0.2s ease 0.15s",
+          transition: `opacity 0.2s ease ${isOpen ? '0.15s' : '0s'}`,
           pointerEvents: isOpen ? "auto" : "none",
           display: "flex",
           flexDirection: "column",
