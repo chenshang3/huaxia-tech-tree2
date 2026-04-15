@@ -4,6 +4,7 @@
 /server/node_modules
 /node_modules
 /.pnp
+/.venv
 .pnp.js
 
 # testing
