@@ -56,12 +56,10 @@ export function NodeTooltip({ node, CAT, position, isVisible }) {
       ref={tooltipRef}
       className="node-tooltip"
       style={{
-        left: `${adjustedPosition.x}px`,
+        left: `${adjustedPosition.x + 12}px`,
         top: `${adjustedPosition.y}px`,
       }}
     >
-      <div className="node-tooltip-arrow" />
-      
       <div className="node-tooltip-content">
         <div className="node-tooltip-header">
           <div className="node-tooltip-name">{node.name}</div>
