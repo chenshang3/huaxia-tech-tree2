@@ -6,21 +6,13 @@
 import React from "react";
 import { Btn } from "./ui/Btn";
 
-export const Header = React.memo(function Header({ mode, setMode, tab, setTab, setSteps, setSi, setPlaying, autoCollapse, setAutoCollapse, idleTimeout, setIdleTimeout, onSearchClick }) {
+export const Header = React.memo(function Header({ mode, setMode, tab, setTab, setSteps, setSi, setPlaying, onSearchClick, onGuideClick }) {
   const handleModeChange = (newMode) => {
     setMode(newMode);
     setSteps([]);
     setSi(0);
     setPlaying(false);
   };
-
-  const timeoutOptions = [
-    [0, "关闭"],
-    [10000, "10秒"],
-    [15000, "15秒"],
-    [30000, "30秒"],
-    [60000, "60秒"],
-  ];
 
   return (
     <header
@@ -102,31 +94,12 @@ export const Header = React.memo(function Header({ mode, setMode, tab, setTab, s
           邻接表
         </Btn>
         <Btn
-          active={autoCollapse}
+          active={false}
           col="139,105,20"
-          onClick={() => setAutoCollapse(p => !p)}
+          onClick={onGuideClick}
         >
-          {autoCollapse ? "⏱ 自动收回中" : "⏱ 自动收回"}
+          📖 新手引导
         </Btn>
-        {autoCollapse && (
-          <select
-            value={idleTimeout}
-            onChange={(e) => setIdleTimeout(Number(e.target.value))}
-            style={{
-              padding: "4px 8px",
-              fontSize: 11,
-              background: "rgba(255,252,245,.95)",
-              border: "1px solid rgba(200,160,69,.3)",
-              borderRadius: 4,
-              color: "#5a4a38",
-              cursor: "pointer",
-            }}
-          >
-            {timeoutOptions.map(([val, label]) => (
-              <option key={val} value={val}>{label}</option>
-            ))}
-          </select>
-        )}
       </div>
     </header>
   );

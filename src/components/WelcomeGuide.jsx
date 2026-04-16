@@ -13,25 +13,38 @@ import './WelcomeGuide.css';
 
 const WELCOME_STORAGE_KEY = 'huaxia_tech_tree_welcome_shown';
 
-export function WelcomeGuide() {
+export function WelcomeGuide({ isOpen = false, onClose }) {
   const [step, setStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
 
-  // 初始化：检查是否需要显示引导
   useEffect(() => {
-    const hasSeenWelcome = localStorage.getItem(WELCOME_STORAGE_KEY);
-    if (!hasSeenWelcome) {
+    if (isOpen) {
       setIsVisible(true);
+      setStep(0);
     }
-  }, []);
+  }, [isOpen]);
 
-  // 关闭引导并记录
+  useEffect(() => {
+    if (!isVisible && !isOpen) {
+      const hasSeenWelcome = localStorage.getItem(WELCOME_STORAGE_KEY);
+      if (!hasSeenWelcome) {
+        setIsVisible(true);
+      }
+    }
+  }, [isVisible, isOpen]);
+
   const handleClose = () => {
     setIsVisible(false);
     localStorage.setItem(WELCOME_STORAGE_KEY, 'true');
+    if (onClose) onClose();
   };
 
-  // 下一步
+  const handlePrev = () => {
+    if (step > 0) {
+      setStep(step - 1);
+    }
+  };
+
   const handleNext = () => {
     if (step < 3) {
       setStep(step + 1);
@@ -40,12 +53,11 @@ export function WelcomeGuide() {
     }
   };
 
-  // 跳过
   const handleSkip = () => {
     handleClose();
   };
 
-  if (!isVisible) return null;
+  if (!isVisible && !isOpen) return null;
 
   const steps = [
     {
@@ -93,7 +105,22 @@ export function WelcomeGuide() {
 
         <div className="welcome-content">
           <div className="welcome-step">
-            第 {step + 1} / 4
+            <button
+              className="step-arrow"
+              onClick={handlePrev}
+              disabled={step === 0}
+              aria-label="上一步"
+            >
+              ‹
+            </button>
+            <span className="step-text">第 {step + 1} / 4</span>
+            <button
+              className="step-arrow"
+              onClick={handleNext}
+              aria-label="下一步"
+            >
+              ›
+            </button>
           </div>
           <h2 className="welcome-title">{currentStep.title}</h2>
           <p className="welcome-description">{currentStep.description}</p>

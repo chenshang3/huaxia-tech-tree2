@@ -16,7 +16,6 @@ import { useGraphData } from "./hooks/useGraphData";
 import { usePanZoom } from "./hooks/usePanZoom";
 import { useTraversal } from "./hooks/useTraversal";
 import { useAutoPlay } from "./hooks/useAutoPlay";
-import { useIdleTimer } from "./hooks/useIdleTimer";
 
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
@@ -35,35 +34,8 @@ export default function HuaxiaTechTree() {
   const [tab, setTab] = useState("graph");
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
-  const [autoCollapse, setAutoCollapse] = useState(false);
-  const [idleTimeout, setIdleTimeout] = useState(15000);
   const [searchOpen, setSearchOpen] = useState(false);
-
-  const isIdle = useIdleTimer(idleTimeout, autoCollapse);
-
-  const [prevIdle, setPrevIdle] = useState(false);
-
-  useEffect(() => {
-    if (autoCollapse && isIdle) {
-      setLeftOpen(false);
-      setRightOpen(false);
-    }
-  }, [autoCollapse, isIdle]);
-
-  useEffect(() => {
-    if (!autoCollapse) {
-      setLeftOpen(true);
-      setRightOpen(true);
-    }
-  }, [autoCollapse]);
-
-  useEffect(() => {
-    if (autoCollapse && prevIdle && !isIdle) {
-      setLeftOpen(true);
-      setRightOpen(true);
-    }
-    setPrevIdle(isIdle);
-  }, [autoCollapse, isIdle, prevIdle]);
+  const [showGuide, setShowGuide] = useState(false);
 
   // 处理全局快捷键 Cmd+K / Ctrl+K 打开搜索
   useEffect(() => {
@@ -174,11 +146,8 @@ export default function HuaxiaTechTree() {
         setSteps={setSteps}
         setSi={setSi}
         setPlaying={setPlaying}
-        autoCollapse={autoCollapse}
-        setAutoCollapse={setAutoCollapse}
-        idleTimeout={idleTimeout}
-        setIdleTimeout={setIdleTimeout}
         onSearchClick={() => setSearchOpen(true)}
+        onGuideClick={() => setShowGuide(true)}
       />
 
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
@@ -284,7 +253,10 @@ export default function HuaxiaTechTree() {
       />
 
       {/* 新手引导 */}
-      <WelcomeGuide />
+      <WelcomeGuide
+        isOpen={showGuide}
+        onClose={() => setShowGuide(false)}
+      />
     </div>
   );
 }
