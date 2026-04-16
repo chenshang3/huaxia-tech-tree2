@@ -26,3 +26,6 @@ yarn-error.log*
 
 CLAUDE.md*
 /parallel-floating-twilight.md
+
+# Scripts - ignore HTML files (raw wiki dumps)
+scripts/output/*.html
