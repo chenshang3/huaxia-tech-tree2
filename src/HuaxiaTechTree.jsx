@@ -184,8 +184,8 @@ export default function HuaxiaTechTree() {
               style={{ "--hint-color-rgb": modeColor(mode) }}
             >
               {mode === "bfs"
-                ? "⬛ 点击任意节点，开始广度优先搜索 BFS"
-                : "🔺 点击任意节点，开始深度优先搜索 DFS"}
+                ? "点击任意节点，开始广度优先搜索 BFS"
+                : "点击任意节点，开始深度优先搜索 DFS"}
             </div>
           )}
         </main>

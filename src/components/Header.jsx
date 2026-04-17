@@ -27,21 +27,21 @@ export const Header = React.memo(function Header({ mode, setMode, tab, setTab, s
           col="200,160,69"
           onClick={() => handleModeChange("explore")}
         >
-          🗺 探索
+          探索
         </Btn>
         <Btn
           active={mode === "bfs"}
           col="74,144,217"
           onClick={() => handleModeChange("bfs")}
         >
-          ⬛ BFS 广度优先
+          BFS 广度优先
         </Btn>
         <Btn
           active={mode === "dfs"}
           col="46,204,113"
           onClick={() => handleModeChange("dfs")}
         >
-          🔺 DFS 深度优先
+          DFS 深度优先
         </Btn>
       </div>
 
@@ -54,20 +54,31 @@ export const Header = React.memo(function Header({ mode, setMode, tab, setTab, s
         >
           🔍 搜索
         </Btn>
-        <Btn
-          active={tab === "graph"}
-          col="200,160,69"
-          onClick={() => setTab("graph")}
+        <div
+          className={`tab-slider ${tab === "adjlist" ? "tab-slider--adjlist" : ""}`}
+          role="tablist"
+          aria-label="视图切换"
         >
-          知识图谱
-        </Btn>
-        <Btn
-          active={tab === "adjlist"}
-          col="74,144,217"
-          onClick={() => setTab("adjlist")}
-        >
-          邻接表
-        </Btn>
+          <div className="tab-slider__thumb" aria-hidden="true" />
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "graph"}
+            className={`tab-slider__option ${tab === "graph" ? "is-active" : ""}`}
+            onClick={() => setTab("graph")}
+          >
+            知识图谱
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "adjlist"}
+            className={`tab-slider__option ${tab === "adjlist" ? "is-active" : ""}`}
+            onClick={() => setTab("adjlist")}
+          >
+            邻接表
+          </button>
+        </div>
         <Btn
           active={false}
           col="139,105,20"
