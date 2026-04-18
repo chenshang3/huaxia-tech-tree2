@@ -813,7 +813,7 @@
     "inv": "先民",
     "desc": "都江堰、郑国渠等古代灌溉工程，展现了高超的水利技术。",
     "sig": "农业发展的基础",
-    "outEdges": ["water_conservancy"]
+    "outEdges": []
   },
   {
     "id": "casting_bronze",

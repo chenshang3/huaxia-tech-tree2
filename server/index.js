@@ -50,25 +50,30 @@ function computePositions(nodes) {
   const baseX = 60;
   const maxX = svgWidth - 60;
   const TIMELINE_SCALE = 10; // 时间轴延长倍数（与前端一致）
+  const NODE_RADIUS = 28; // 与前端 constants.js 保持一致
+  const NODE_DIAMETER = NODE_RADIUS * 2;
+  const TEXT_CHAR_WIDTH = 9;
+  const LABEL_HORIZONTAL_PADDING = 18;
+  const MIN_NODE_GAP = 12;
 
   // ========== 分类高度区间映射 ==========
   // 限制每个分类的 lane 范围，实现分类分区布局
   const CATEGORY_LANES = {
-    craft:       { minLane: 0, maxLane: 2 },    // 工艺 - 上部
-    textile:     { minLane: 0, maxLane: 2 },    // 纺织 - 上部
-    metallurgy:  { minLane: 0, maxLane: 2 },    // 冶金 - 上部
-    agriculture: { minLane: 0, maxLane: 1 },    // 农业 - 最上部
+    agriculture: { minLane: 2, maxLane: 4 },    // 农业 - 最上部
+    craft:       { minLane: 2, maxLane: 4 },    // 工艺 - 上部
+    textile:     { minLane: 3, maxLane: 5 },    // 纺织 - 上部
+    metallurgy:  { minLane: 3, maxLane: 5 },    // 冶金 - 上部
     
-    culture:     { minLane: 2, maxLane: 4 },    // 文化 - 中部
-    science:     { minLane: 2, maxLane: 4 },    // 科学 - 中部
-    math:        { minLane: 2, maxLane: 4 },    // 数学 - 中部
+    culture:     { minLane: 4, maxLane: 6 },    // 文化 - 中部
+    science:     { minLane: 4, maxLane: 6 },    // 科学 - 中部
+    math:        { minLane: 5, maxLane: 7 },    // 数学 - 中部
     
-    medicine:    { minLane: 4, maxLane: 5 },    // 医学 - 中下部
-    navigation:  { minLane: 4, maxLane: 5 },    // 航海 - 中下部
-    trade:       { minLane: 4, maxLane: 6 },    // 贸易 - 中下部
+    medicine:    { minLane: 5, maxLane: 7 },    // 医学 - 中下部
+    navigation:  { minLane: 6, maxLane: 8 },    // 航海 - 中下部
+    trade:       { minLane: 6, maxLane: 8 },    // 贸易 - 中下部
     
-    engineering: { minLane: 5, maxLane: 7 },    // 工程 - 下部
-    military:    { minLane: 5, maxLane: 7 },    // 军事 - 下部
+    engineering: { minLane: 7, maxLane: 9 },    // 工程 - 下部
+    military:    { minLane: 7, maxLane: 9 },    // 军事 - 下部
   };
 
   // 计算总加权跨度
@@ -81,14 +86,103 @@ function computePositions(nodes) {
   const timelineWidth = (maxX - baseX) * TIMELINE_SCALE;
 
   // 扩展 lanes（超过 5 行时自动增加）
-  const laneHeight = 80;
+  const laneHeight = 100;
   const startY = 90;
-  const getLaneY = (lane) => startY + lane * laneHeight;
+  const JITTER_AMPLITUDE = 20;
+  const getLaneY = (lane, jitter = 0) => startY + lane * laneHeight + jitter;
   const initialLanes = 8;  // 增加初始 lanes 数量以支持分类分区
-  let laneLastX = new Array(initialLanes).fill(baseX);
+  // 空 lane 用 -Infinity 标记，表示该行尚未被任何节点占用。
+  let laneLastX = new Array(initialLanes).fill(-Infinity);
 
-  // 碰撞阈值（加权年份差距）
-  const yearGapThreshold = 50;
+  // 服务端无法直接测量 SVG 文本宽度，这里用名称长度估算节点的横向包围盒。
+  const getNodeBoxWidth = (node) => {
+    const name = node.name || '';
+    const firstLineLength = Math.min(name.length, 4);
+    const secondLineLength = Math.max(0, name.length - 4);
+    const textWidth = Math.max(firstLineLength, secondLineLength) * TEXT_CHAR_WIDTH + LABEL_HORIZONTAL_PADDING;
+    return Math.max(NODE_DIAMETER, textWidth);
+  };
+
+  const getRequiredLaneGap = (node) => getNodeBoxWidth(node) + MIN_NODE_GAP;
+
+  const ensureLanes = (lanes) => {
+    while (laneLastX.length < lanes) {
+      laneLastX.push(-Infinity);
+    }
+  };
+
+  const canPlaceInLane = (lane, x, minGap) => {
+    ensureLanes(lane + 1);
+    if (!Number.isFinite(laneLastX[lane])) {
+      return true;
+    }
+    return x - laneLastX[lane] >= minGap;
+  };
+
+  // 先在分类优先区间内搜索，再按距离中心最近的顺序向上下两侧扩展。
+  const buildLaneCandidates = (catConfig) => {
+    const lanes = [];
+    const seen = new Set();
+    const center = (catConfig.minLane + catConfig.maxLane) / 2;
+    const orderedBaseLanes = [];
+
+    for (let distance = 0; distance <= catConfig.maxLane - catConfig.minLane; distance++) {
+      const lower = Math.floor(center - distance);
+      const upper = Math.ceil(center + distance);
+      if (lower >= catConfig.minLane && lower <= catConfig.maxLane) {
+        orderedBaseLanes.push(lower);
+      }
+      if (upper >= catConfig.minLane && upper <= catConfig.maxLane && upper !== lower) {
+        orderedBaseLanes.push(upper);
+      }
+    }
+
+    orderedBaseLanes.forEach((lane) => {
+      if (!seen.has(lane)) {
+        seen.add(lane);
+        lanes.push(lane);
+      }
+    });
+
+    let offset = 1;
+    while (lanes.length < laneLastX.length + 2) {
+      const lower = catConfig.minLane - offset;
+      const upper = catConfig.maxLane + offset;
+
+      if (lower >= 0 && !seen.has(lower)) {
+        seen.add(lower);
+        lanes.push(lower);
+      }
+      if (!seen.has(upper)) {
+        seen.add(upper);
+        lanes.push(upper);
+      }
+
+      if (lower < 0 && upper >= laneLastX.length + 1) {
+        break;
+      }
+      offset += 1;
+    }
+
+    return lanes;
+  };
+
+  // 生成稳定哈希，让抖动对同一节点始终保持一致，避免每次刷新布局漂移。
+  const hashString = (value) => {
+    let hash = 2166136261;
+    for (let i = 0; i < value.length; i++) {
+      hash ^= value.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
+  };
+
+  // 抖动只用于打散完全水平对齐，不改变 lane 作为主布局单位的事实。
+  const getDeterministicJitter = (node) => {
+    const stableKey = `${node.id || ''}|${node.name || ''}|${node.year || 0}`;
+    const normalized = hashString(stableKey) / 0xffffffff;
+    return Math.round((normalized * 2 - 1) * JITTER_AMPLITUDE);
+  };
 
   // 按年份排序节点
   const sortedNodes = [...nodes].sort((a, b) => a.year - b.year);
@@ -100,43 +194,29 @@ function computePositions(nodes) {
     // X 坐标基于加权年份（与前端时间轴计算方式一致）
     const weightedYear = yearToWeightedYear(n.year, timelineConfig);
     const x = Math.round(baseX + (weightedYear / totalWeightedYears) * timelineWidth);
-
-    // 确保 laneLastX 有足够长度
-    const ensureLanes = (lanes) => {
-      while (laneLastX.length < lanes) {
-        laneLastX.push(baseX);
-      }
-    };
+    const minGap = getRequiredLaneGap(n);
 
     // ========== 改进的 lane 分配逻辑 ==========
     // 1. 获取该分类的优先 lane 范围
     const catConfig = CATEGORY_LANES[n.cat] || { minLane: 0, maxLane: laneLastX.length - 1 };
-    let assignedLane = -1;
+    const laneCandidates = buildLaneCandidates(catConfig);
+    let assignedLane = null;
 
-    // 2. 优先在分类范围内寻找合适的 lane
-    for (let lane = catConfig.minLane; lane <= catConfig.maxLane; lane++) {
-      ensureLanes(lane + 1);
-      if (x - laneLastX[lane] >= yearGapThreshold) {
+    // 2. 先在分类区间内，再向两侧做就近扩展
+    for (const lane of laneCandidates) {
+      if (canPlaceInLane(lane, x, minGap)) {
         assignedLane = lane;
         break;
       }
     }
 
-    // 3. 如果分类范围内没有可用的 lane，扩展到相邻 lane
-    if (assignedLane === -1) {
-      // 向下扩展一个 lane
-      const expandedLane = catConfig.maxLane + 1;
-      ensureLanes(expandedLane + 1);
-      if (x - laneLastX[expandedLane] >= yearGapThreshold) {
-        assignedLane = expandedLane;
-      } else {
-        // 创建新 lane
-        assignedLane = laneLastX.length;
-        ensureLanes(assignedLane + 1);
-      }
+    // 3. 如果所有候选 lane 都不满足条件，则创建一个紧邻分类区块的新 lane
+    if (assignedLane === null) {
+      assignedLane = Math.max(laneLastX.length, catConfig.maxLane + 1);
+      ensureLanes(assignedLane + 1);
     }
 
-    const y = getLaneY(assignedLane);
+    const y = getLaneY(assignedLane, getDeterministicJitter(n));
     laneLastX[assignedLane] = x;
 
     positions[n.id] = { x, y, lane: assignedLane };

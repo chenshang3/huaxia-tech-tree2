@@ -67,36 +67,63 @@
   gap: 6px;
 }
 
+.mode-slider,
 .tab-slider {
   position: relative;
-  display: inline-grid;
-  grid-template-columns: 1fr 1fr;
+  display: inline-flex;
   align-items: center;
-  min-width: 180px;
   padding: 3px;
-  border: 1px solid rgba(200, 160, 69, 0.28);
+  border: 1px solid rgba(var(--slider-rgb, 200, 160, 69), 0.28);
   border-radius: 999px;
-  background: rgba(139, 105, 20, 0.06);
+  background: rgba(var(--slider-rgb, 139, 105, 20), 0.06);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --slider-thumb-left: 3px;
+  --slider-thumb-width: 72px;
+  --slider-thumb-inset: 3px;
 }
 
+.mode-slider {
+  --slider-rgb: 200, 160, 69;
+}
+
+.mode-slider__thumb,
 .tab-slider__thumb {
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: calc(50% - 3px);
-  height: calc(100% - 6px);
+  top: var(--slider-thumb-inset);
+  left: var(--slider-thumb-left);
+  width: var(--slider-thumb-width);
+  height: calc(100% - (var(--slider-thumb-inset) * 2));
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(200, 160, 69, 0.22), rgba(139, 105, 20, 0.16));
-  border: 1px solid rgba(200, 160, 69, 0.38);
-  box-shadow: 0 2px 8px rgba(139, 105, 20, 0.12);
-  transition: transform var(--duration-base) var(--easing-spring);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--slider-rgb, 200, 160, 69), 0.22),
+    rgba(var(--slider-rgb, 139, 105, 20), 0.14)
+  );
+  border: 1px solid rgba(var(--slider-rgb, 200, 160, 69), 0.38);
+  box-shadow: 0 2px 8px rgba(var(--slider-rgb, 139, 105, 20), 0.12);
+  transition: left var(--duration-base) var(--easing-spring),
+    width var(--duration-base) var(--easing-spring),
+    background var(--duration-fast) var(--easing-ease-out),
+    border-color var(--duration-fast) var(--easing-ease-out);
 }
 
-.tab-slider--adjlist .tab-slider__thumb {
-  transform: translateX(100%);
+.mode-slider--explore {
+  --slider-rgb: 200, 160, 69;
 }
 
+.mode-slider--bfs {
+  --slider-rgb: 74, 144, 217;
+}
+
+.mode-slider--dfs {
+  --slider-rgb: 46, 204, 113;
+}
+
+.tab-slider {
+  --slider-rgb: 200, 160, 69;
+}
+
+.mode-slider__option,
 .tab-slider__option {
   position: relative;
   z-index: 1;
@@ -105,11 +132,13 @@
   background: transparent;
   color: #7a6751;
   font-size: 11.5px;
+  white-space: nowrap;
   transition: color var(--duration-fast) var(--easing-ease-out);
 }
 
+.mode-slider__option.is-active,
 .tab-slider__option.is-active {
-  color: #5a4216;
+  color: rgb(var(--slider-rgb, 90, 66, 22));
   font-weight: var(--font-weight-semibold);
 }
 

@@ -6,9 +6,9 @@
   { "name": "周朝", "start": -1100, "end": -770, "color": "#c8a045", "lightColor": "#fdf6e8", "scale": 0.8 },
   { "name": "春秋", "start": -770, "end": -475, "color": "#d0a55c", "lightColor": "#fef7e8", "scale": 1.5 },
   { "name": "战国", "start": -475, "end": -221, "color": "#d8b070", "lightColor": "#fef9eb", "scale": 3.0 },
-  { "name": "秦朝", "start": -221, "end": -206, "color": "#e09460", "lightColor": "#fff0e4", "scale": 10.0 },
+  { "name": "秦朝", "start": -221, "end": -206, "color": "#e09460", "lightColor": "#fff0e4", "scale": 15.0 },
   { "name": "西汉", "start": -206, "end": 25, "color": "#e8a080", "lightColor": "#fff4ea", "scale": 2.5 },
-  { "name": "东汉", "start": 25, "end": 220, "color": "#eda490", "lightColor": "#fff7eb", "scale": 2.0 },
+  { "name": "东汉", "start": 25, "end": 220, "color": "#eda490", "lightColor": "#fff7eb", "scale": 5.0 },
   { "name": "三国", "start": 220, "end": 265, "color": "#f0b0a0", "lightColor": "#fff9ec", "scale": 3.0 },
   { "name": "两晋", "start": 265, "end": 420, "color": "#f3bca8", "lightColor": "#fffbee", "scale": 1.5 },
   { "name": "南北朝", "start": 420, "end": 581, "color": "#f6c8b0", "lightColor": "#fffdee", "scale": 1.5 },
@@ -20,5 +20,5 @@
   { "name": "明朝", "start": 1368, "end": 1636, "color": "#fd8058", "lightColor": "#fff3ed", "scale": 3.0 },
   { "name": "清朝", "start": 1636, "end": 1840, "color": "#fc6040", "lightColor": "#fff1ec", "scale": 2.5 },
   { "name": "近代", "start": 1840, "end": 1912, "color": "#fa4040", "lightColor": "#fff0eb", "scale": 2.0 },
-  { "name": "现代", "start": 1912, "end": 2026, "color": "#4080f0", "lightColor": "#e6f0ff", "scale": 2.5 }
+  { "name": "现代", "start": 1912, "end": 2026, "color": "#4080f0", "lightColor": "#e6f0ff", "scale": 12.5 }
 ]
