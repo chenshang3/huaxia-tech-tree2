@@ -4,8 +4,19 @@ import {
   ERA_BACKGROUNDS_BY_NAME,
   ERA_BACKGROUND_SETTINGS,
 } from "../../config/eraBackgrounds";
+import { NodeTooltip } from "../NodeTooltip";
 import { NODE_RADIUS, VIEW_BOX } from "../../utils/constants";
 import { edgePath } from "../../utils/graphUtils";
+import { computeEraTimelinePositions } from "../../utils/timelineUtils";
+
+export const PANEL_COLLAPSE_EFFECTS = {
+  SLIDE: "slide",
+  FADE: "fade",
+  SCALE: "scale",
+  INK: "ink",
+};
+
+export const DEFAULT_PANEL_COLLAPSE_EFFECT = PANEL_COLLAPSE_EFFECTS.SLIDE;
 
 const CATEGORY_TONE = {
   craft: { name: "工艺", tone: "#8A5F32", seal: "匠" },
@@ -145,8 +156,20 @@ function buildEraSections(nodes, timelineConfig, categories) {
           position: ERA_BACKGROUND_SETTINGS.fallbackPosition,
         },
       };
-    })
-    .filter((era) => era.nodes.length > 0);
+    });
+}
+
+function getEraAtWorldX(eraPositions, worldX) {
+  if (!eraPositions.length || !Number.isFinite(worldX)) return "";
+
+  const containing = eraPositions.find((era) => worldX >= era.x1 && worldX < era.x2);
+  if (containing) return containing.name;
+
+  return eraPositions.reduce((closest, era) => {
+    const eraCenter = (era.x1 + era.x2) / 2;
+    const closestCenter = (closest.x1 + closest.x2) / 2;
+    return Math.abs(eraCenter - worldX) < Math.abs(closestCenter - worldX) ? era : closest;
+  }, eraPositions[0]).name;
 }
 
 function ScrollContainer({ children, activeEraName, onSearch, scrollRef }) {
@@ -169,8 +192,7 @@ function ScrollContainer({ children, activeEraName, onSearch, scrollRef }) {
       <div className={styles.stageBackdrop} aria-hidden="true" />
       <header className={styles.manuscriptHeader}>
         <div>
-          <p className={styles.kicker}>华夏文明科技树</p>
-          <h1>一卷文明技术长图</h1>
+          <h1>华夏文明科技树</h1>
         </div>
         <div className={styles.headerActions}>
           <span>{activeEraName}</span>
@@ -208,13 +230,88 @@ function Timeline({ eras, activeEraName, onEraSelect }) {
   );
 }
 
+function PanelToggle({ side, isOpen, onToggle }) {
+  return (
+    <button
+      type="button"
+      className={`${styles.panelToggle} ${styles[`panelToggle${side === "left" ? "Left" : "Right"}`]}`}
+      onClick={onToggle}
+      aria-label={isOpen ? `收起${side === "left" ? "左侧卷目" : "右侧笺注"}` : `展开${side === "left" ? "左侧卷目" : "右侧笺注"}`}
+      aria-expanded={isOpen}
+    >
+      {side === "left" ? (isOpen ? "‹" : "›") : (isOpen ? "›" : "‹")}
+    </button>
+  );
+}
+
+function TreeCodexPanel({ activeEra, selectedNode, lineage, categoryStats, totalNodes, totalEdges, isOpen }) {
+  const topCategories = categoryStats.slice(0, 6);
+
+  return (
+    <aside
+      className={`${styles.treeTitleBlock} ${!isOpen ? styles.panelClosed : ""}`}
+      aria-hidden={!isOpen}
+    >
+      <p className={styles.kicker}>科技树主卷</p>
+      <h2>器物相因，技艺相生</h2>
+      <p>
+        保留有向科技树的节点、边与传承关系；以新版卷轴材质承载图谱，点击任一技艺即可展开前驱与后继的溯源脉络。
+      </p>
+
+      <div className={styles.codexSection}>
+        <span>当前卷段</span>
+        <strong>{activeEra?.name || "卷首"}</strong>
+        <p>{activeEra?.theme || "移动图谱，时间线会随视野自动切换。"}</p>
+      </div>
+
+      <div className={styles.codexStats}>
+        <div>
+          <strong>{totalNodes}</strong>
+          <span>技艺节点</span>
+        </div>
+        <div>
+          <strong>{totalEdges}</strong>
+          <span>传承边</span>
+        </div>
+      </div>
+
+      <div className={styles.codexSection}>
+        <span>卷中门类</span>
+        <div className={styles.categoryLedger}>
+          {topCategories.map((item) => (
+            <div key={item.label}>
+              <i style={{ background: item.color }} />
+              <b>{item.label}</b>
+              <em>{item.count}</em>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className={styles.codexSection}>
+        <span>溯源状态</span>
+        {selectedNode ? (
+          <p>
+            已选「{selectedNode.name}」，上承 {lineage.ancestors.size} 项，下启 {lineage.descendants.size} 项。朱砂线为当前脉络，黛青点为前驱，朱砂点为后继。
+          </p>
+        ) : (
+          <p>悬停查看简注，点击节点展开溯源；拖动画卷时，下方时间线会按视野位置自动响应。</p>
+        )}
+      </div>
+    </aside>
+  );
+}
+
 function HybridTechTree({
   NODES,
   POS,
   CAT,
   EDGES,
+  activeEra,
   selectedId,
+  selectedNode,
   lineage,
+  categoryStats,
   pan,
   scale,
   viewportRef,
@@ -222,18 +319,25 @@ function HybridTechTree({
   actions,
   isDragging,
   onSelect,
+  leftOpen,
+  onToggleLeft,
 }) {
   const hasTrace = Boolean(selectedId);
+  const [hoveredNode, setHoveredNode] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
   return (
     <section className={styles.treeManuscript} aria-label="华夏科技树图谱">
-      <div className={styles.treeTitleBlock}>
-        <p className={styles.kicker}>科技树主卷</p>
-        <h2>器物相因，技艺相生</h2>
-        <p>
-          保留有向科技树的节点、边与传承关系；以新版卷轴材质承载图谱，点击任一技艺即可展开前驱与后继的溯源脉络。
-        </p>
-      </div>
+      <PanelToggle side="left" isOpen={leftOpen} onToggle={onToggleLeft} />
+      <TreeCodexPanel
+        activeEra={activeEra}
+        selectedNode={selectedNode}
+        lineage={lineage}
+        categoryStats={categoryStats}
+        totalNodes={NODES.length}
+        totalEdges={EDGES.length}
+        isOpen={leftOpen}
+      />
 
       <div className={styles.treeViewportShell} data-tree-viewport>
         <svg
@@ -261,8 +365,6 @@ function HybridTechTree({
             </marker>
           </defs>
 
-          <rect width="1200" height="640" fill="rgba(245,230,200,.42)" />
-          <rect width="1200" height="640" fill="url(#hybridPaperGrid)" />
           <path
             d="M70 578 C240 548, 410 608, 610 568 S1010 540, 1140 586"
             fill="none"
@@ -310,6 +412,15 @@ function HybridTechTree({
                   className={`${styles.treeNode} ${isSelected ? styles.treeNodeSelected : ""}`}
                   transform={`translate(${position.x},${position.y})`}
                   onClick={() => onSelect(node.id)}
+                  onMouseEnter={(event) => {
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    setHoveredNode(node);
+                    setTooltipPos({
+                      x: rect.right,
+                      y: rect.top,
+                    });
+                  }}
+                  onMouseLeave={() => setHoveredNode(null)}
                   style={{
                     "--tree-node-tone": isSelected ? "#8f2f28" : tone,
                     opacity: isDimmed ? 0.2 : 1,
@@ -354,34 +465,59 @@ function HybridTechTree({
         </svg>
 
         <div className={styles.treeControls}>
-          <button type="button" onClick={actions.zoomIn}>放大</button>
-          <button type="button" onClick={actions.zoomOut}>缩小</button>
-          <button type="button" onClick={() => selectedId && actions.panToNode(selectedId, POS)}>归位</button>
-          <button type="button" onClick={actions.resetView}>全卷</button>
+          <button type="button" className="graph-view__control-button" onClick={actions.zoomIn}>+</button>
+          <button type="button" className="graph-view__control-button" onClick={actions.zoomOut}>−</button>
+          <button
+            type="button"
+            className="graph-view__control-button graph-view__control-button--small"
+            onClick={() => selectedId ? actions.panToNode(selectedId, POS) : actions.resetView()}
+            title="回归原位"
+          >
+            ◎
+          </button>
         </div>
       </div>
+
+      <NodeTooltip
+        node={hoveredNode}
+        CAT={CAT}
+        position={tooltipPos}
+        isVisible={hoveredNode !== null && !isDragging}
+      />
     </section>
   );
 }
 
-function AnnotationPanel({ node, categories, predecessorNodes, successorNodes, lineage, onSelect, onClose }) {
+function AnnotationPanel({ node, categories, predecessorNodes, successorNodes, lineage, isOpen, onToggle, onSelect, onClose }) {
   if (!node) {
     return (
-      <aside className={styles.annotationPanel}>
-        <p className={styles.annotationKicker}>卷旁笺注</p>
-        <h2>择一技艺，溯其来路</h2>
-        <p>
-          点击科技树中的节点，可见发明缘起、前驱依赖与后续传承。图中会以朱砂线标出可追溯的技术脉络。
-        </p>
-      </aside>
+      <>
+        <PanelToggle side="right" isOpen={isOpen} onToggle={onToggle} />
+        <aside
+          className={`${styles.annotationPanel} ${!isOpen ? styles.panelClosed : ""}`}
+          aria-hidden={!isOpen}
+        >
+          <p className={styles.annotationKicker}>卷旁笺注</p>
+          <h2>择一技艺，溯其来路</h2>
+          <p>
+            点击科技树中的节点，可见发明缘起、前驱依赖与后续传承。图中会以朱砂线标出可追溯的技术脉络。
+          </p>
+        </aside>
+      </>
     );
   }
 
   const category = categories[node.cat] || { label: node.cat, color: "#6F4A2A" };
 
   return (
-    <aside className={styles.annotationPanel} style={{ "--annotation-tone": category.color }}>
-      <button type="button" className={styles.closeAnnotation} onClick={onClose}>收起</button>
+    <>
+    <PanelToggle side="right" isOpen={isOpen} onToggle={onToggle} />
+    <aside
+      className={`${styles.annotationPanel} ${!isOpen ? styles.panelClosed : ""}`}
+      style={{ "--annotation-tone": category.color }}
+      aria-hidden={!isOpen}
+    >
+      <button type="button" className={styles.closeAnnotation} onClick={onClose}>清除</button>
       <p className={styles.annotationKicker}>{formatYear(node.year)} · {node.era} · {category.label}</p>
       <h2>{node.name}</h2>
       <p className={styles.annotationLead}>{node.sig}</p>
@@ -424,6 +560,7 @@ function AnnotationPanel({ node, categories, predecessorNodes, successorNodes, l
         </div>
       )}
     </aside>
+    </>
   );
 }
 
@@ -495,21 +632,49 @@ export function HuaxiaScrollExperience({
   handlers,
   actions,
   isDragging,
+  collapseEffect = DEFAULT_PANEL_COLLAPSE_EFFECT,
 }) {
   const categories = useMemo(() => normalizeCategories(CAT), [CAT]);
   const eras = useMemo(
     () => buildEraSections(NODES, timelineConfig, categories),
     [NODES, timelineConfig, categories]
   );
+  const eraPositions = useMemo(
+    () => computeEraTimelinePositions(timelineConfig),
+    [timelineConfig]
+  );
+  const categoryStats = useMemo(() => {
+    const counts = NODES.reduce((acc, node) => {
+      const category = categories[node.cat] || { label: node.cat, color: "#6F4A2A" };
+      const key = category.label;
+      acc[key] = acc[key] || { label: key, color: category.color || "#6F4A2A", count: 0 };
+      acc[key].count += 1;
+      return acc;
+    }, {});
+
+    return Object.values(counts).sort((a, b) => b.count - a.count);
+  }, [NODES, categories]);
   const [activeEraName, setActiveEraName] = useState(eras[0]?.name || "");
   const [selectedId, setSelectedId] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [leftOpen, setLeftOpen] = useState(true);
+  const [rightOpen, setRightOpen] = useState(true);
   const scrollRef = useRef(null);
 
   useEffect(() => {
     if (!eras.length) return;
     setActiveEraName((current) => current || eras[0].name);
   }, [eras]);
+
+  useEffect(() => {
+    const viewCenterX = 600;
+    const worldX = (viewCenterX - pan.x) / scale;
+    const nextEraName = getEraAtWorldX(eraPositions, worldX);
+
+    if (nextEraName && nextEraName !== activeEraName) {
+      setActiveEraName(nextEraName);
+    }
+  }, [activeEraName, eraPositions, pan.x, scale]);
 
   const selectedNode = selectedId ? NMAP[selectedId] : null;
   const lineage = useMemo(
@@ -524,7 +689,6 @@ export function HuaxiaScrollExperience({
     : [];
 
   const scrollToEra = (eraName) => {
-    setActiveEraName(eraName);
     const eraNode = NODES.find((node) => normalizeEraName(node.era) === eraName && POS[node.id]);
     if (eraNode) {
       actions.panToNode(eraNode.id, POS);
@@ -536,13 +700,17 @@ export function HuaxiaScrollExperience({
     setSearchOpen(false);
     const node = NMAP[id];
     if (node) {
-      setActiveEraName(normalizeEraName(node.era));
       window.setTimeout(() => actions.panToNode(node.id, POS), 20);
     }
   };
 
   return (
-    <div className={styles.experienceShell}>
+    <div
+      className={styles.experienceShell}
+      data-left-panel={leftOpen ? "open" : "closed"}
+      data-right-panel={rightOpen ? "open" : "closed"}
+      data-collapse-effect={collapseEffect}
+    >
       <ScrollContainer
         activeEraName={activeEraName}
         onSearch={() => setSearchOpen(true)}
@@ -553,8 +721,11 @@ export function HuaxiaScrollExperience({
           POS={POS}
           CAT={categories}
           EDGES={EDGES}
+          activeEra={eras.find((era) => era.name === activeEraName)}
           selectedId={selectedId}
+          selectedNode={selectedNode}
           lineage={lineage}
+          categoryStats={categoryStats}
           pan={pan}
           scale={scale}
           viewportRef={viewportRef}
@@ -562,6 +733,8 @@ export function HuaxiaScrollExperience({
           actions={actions}
           isDragging={isDragging}
           onSelect={selectNode}
+          leftOpen={leftOpen}
+          onToggleLeft={() => setLeftOpen((open) => !open)}
         />
       </ScrollContainer>
 
@@ -573,6 +746,8 @@ export function HuaxiaScrollExperience({
         predecessorNodes={predecessorNodes}
         successorNodes={successorNodes}
         lineage={lineage}
+        isOpen={rightOpen}
+        onToggle={() => setRightOpen((open) => !open)}
         onSelect={selectNode}
         onClose={() => setSelectedId("")}
       />
