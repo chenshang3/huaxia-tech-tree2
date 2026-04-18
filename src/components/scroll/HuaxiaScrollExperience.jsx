@@ -4,6 +4,8 @@ import {
   ERA_BACKGROUNDS_BY_NAME,
   ERA_BACKGROUND_SETTINGS,
 } from "../../config/eraBackgrounds";
+import { NODE_RADIUS, VIEW_BOX } from "../../utils/constants";
+import { edgePath } from "../../utils/graphUtils";
 
 const CATEGORY_TONE = {
   craft: { name: "工艺", tone: "#8A5F32", seal: "匠" },
@@ -75,14 +77,50 @@ function formatYear(year) {
   return `公元 ${year} 年`;
 }
 
-function formatRange(start, end) {
-  return `${formatYear(start).replace(" 年", "")} - ${formatYear(end).replace(" 年", "")}`;
+function normalizeEraName(eraName) {
+  return ERA_ALIASES[eraName] || eraName;
+}
+
+function collectLineage(nodeId, ADJ, RADJ) {
+  const ancestors = new Set();
+  const descendants = new Set();
+  const edges = new Set();
+
+  const walkBack = (currentId) => {
+    (RADJ[currentId] || []).forEach((parentId) => {
+      edges.add(`${parentId}->${currentId}`);
+      if (ancestors.has(parentId)) return;
+      ancestors.add(parentId);
+      walkBack(parentId);
+    });
+  };
+
+  const walkForward = (currentId) => {
+    (ADJ[currentId] || []).forEach((childId) => {
+      edges.add(`${currentId}->${childId}`);
+      if (descendants.has(childId)) return;
+      descendants.add(childId);
+      walkForward(childId);
+    });
+  };
+
+  if (nodeId) {
+    walkBack(nodeId);
+    walkForward(nodeId);
+  }
+
+  return {
+    ancestors,
+    descendants,
+    nodes: new Set([nodeId, ...ancestors, ...descendants].filter(Boolean)),
+    edges,
+  };
 }
 
 function buildEraSections(nodes, timelineConfig, categories) {
   const grouped = new Map();
   nodes.forEach((node) => {
-    const eraName = ERA_ALIASES[node.era] || node.era;
+    const eraName = normalizeEraName(node.era);
     if (!grouped.has(eraName)) grouped.set(eraName, []);
     grouped.get(eraName).push(node);
   });
@@ -111,32 +149,10 @@ function buildEraSections(nodes, timelineConfig, categories) {
     .filter((era) => era.nodes.length > 0);
 }
 
-function useRevealOnScroll(rootRef) {
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return undefined;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add(styles.visible);
-          }
-        });
-      },
-      { root, threshold: 0.25 }
-    );
-
-    const items = root.querySelectorAll("[data-reveal]");
-    items.forEach((item) => observer.observe(item));
-
-    return () => observer.disconnect();
-  }, [rootRef]);
-}
-
 function ScrollContainer({ children, activeEraName, onSearch, scrollRef }) {
   const publicPath = process.env.PUBLIC_URL || "";
   const handleWheel = (event) => {
+    if (event.target.closest?.("[data-tree-viewport]")) return;
     if (!scrollRef.current || Math.abs(event.deltaY) < Math.abs(event.deltaX)) return;
     event.preventDefault();
     scrollRef.current.scrollLeft += event.deltaY;
@@ -192,77 +208,170 @@ function Timeline({ eras, activeEraName, onEraSelect }) {
   );
 }
 
-function TechNode({ node, category, isSelected, onSelect }) {
-  return (
-    <button
-      type="button"
-      className={`${styles.techNode} ${isSelected ? styles.techNodeSelected : ""}`}
-      style={{ "--node-tone": category.color }}
-      onClick={() => onSelect(node.id)}
-      data-reveal
-    >
-      <span className={styles.techSeal}>{category.seal}</span>
-      <span className={styles.techName}>{node.name}</span>
-      <span className={styles.techMeta}>{formatYear(node.year)} · {category.label}</span>
-      <span className={styles.techLine}>{node.sig || node.desc}</span>
-    </button>
-  );
-}
-
-function EraCard({ era, categories, selectedId, onSelect, eraRef }) {
-  const featured = era.representative;
+function HybridTechTree({
+  NODES,
+  POS,
+  CAT,
+  EDGES,
+  selectedId,
+  lineage,
+  pan,
+  scale,
+  viewportRef,
+  handlers,
+  actions,
+  isDragging,
+  onSelect,
+}) {
+  const hasTrace = Boolean(selectedId);
 
   return (
-    <article
-      ref={eraRef}
-      className={styles.eraPanel}
-      style={{
-        "--era-image": `url("${era.background.image}")`,
-        "--era-position": era.background.position || "center center",
-      }}
-      data-era={era.name}
-    >
-      <div className={styles.eraPaper} data-reveal>
-        <div className={styles.eraHeading}>
-          <span className={styles.eraRange}>{formatRange(era.start, era.end)}</span>
-          <h2>{era.name}</h2>
-        </div>
-        <p className={styles.eraTheme}>{era.theme}</p>
-        {featured && (
-          <p className={styles.eraAnnotation}>
-            此段以「{featured.name}」为要津：{featured.desc}
-          </p>
-        )}
-        <div className={styles.eraTags}>
-          {era.categories.slice(0, 5).map((name) => (
-            <span key={name}>{name}</span>
-          ))}
-        </div>
+    <section className={styles.treeManuscript} aria-label="华夏科技树图谱">
+      <div className={styles.treeTitleBlock}>
+        <p className={styles.kicker}>科技树主卷</p>
+        <h2>器物相因，技艺相生</h2>
+        <p>
+          保留有向科技树的节点、边与传承关系；以新版卷轴材质承载图谱，点击任一技艺即可展开前驱与后继的溯源脉络。
+        </p>
       </div>
 
-      <div className={styles.nodeRiver}>
-        {era.nodes.map((node) => (
-          <TechNode
-            key={node.id}
-            node={node}
-            category={categories[node.cat] || { label: node.cat, color: "#6F4A2A", seal: "技" }}
-            isSelected={selectedId === node.id}
-            onSelect={onSelect}
+      <div className={styles.treeViewportShell} data-tree-viewport>
+        <svg
+          ref={viewportRef}
+          className={styles.hybridGraphSvg}
+          viewBox={VIEW_BOX}
+          preserveAspectRatio="xMidYMin meet"
+          xmlns="http://www.w3.org/2000/svg"
+          onWheel={handlers.onWheel}
+          onMouseDown={handlers.onMouseDown}
+          onMouseMove={handlers.onMouseMove}
+          onMouseUp={handlers.onMouseUp}
+          onMouseLeave={handlers.onMouseLeave}
+          style={{ cursor: isDragging ? "grabbing" : "grab" }}
+        >
+          <defs>
+            <pattern id="hybridPaperGrid" width="54" height="54" patternUnits="userSpaceOnUse">
+              <path d="M 54 0 L 0 0 0 54" fill="none" stroke="rgba(74,53,28,.08)" strokeWidth=".7" />
+            </pattern>
+            <marker id="hybridArrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+              <path d="M0,0 L0,7 L7,3.5z" fill="rgba(74,53,28,.42)" />
+            </marker>
+            <marker id="hybridArrowTrace" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <path d="M0,0 L0,8 L8,4z" fill="#8f2f28" />
+            </marker>
+          </defs>
+
+          <rect width="1200" height="640" fill="rgba(245,230,200,.42)" />
+          <rect width="1200" height="640" fill="url(#hybridPaperGrid)" />
+          <path
+            d="M70 578 C240 548, 410 608, 610 568 S1010 540, 1140 586"
+            fill="none"
+            stroke="rgba(49,79,82,.16)"
+            strokeWidth="18"
+            strokeLinecap="round"
           />
-        ))}
+
+          <g transform={`translate(${pan.x},${pan.y}) scale(${scale})`}>
+            {EDGES.map((edge) => {
+              const edgeKey = `${edge.from}->${edge.to}`;
+              const isTraced = lineage.edges.has(edgeKey);
+              const isDimmed = hasTrace && !isTraced;
+
+              return (
+                <path
+                  key={edgeKey}
+                  d={edgePath(edge.from, edge.to, POS, NODE_RADIUS)}
+                  fill="none"
+                  stroke={isTraced ? "#8f2f28" : "rgba(74,53,28,.34)"}
+                  strokeWidth={isTraced ? 3.2 : 1.35}
+                  markerEnd={isTraced ? "url(#hybridArrowTrace)" : "url(#hybridArrow)"}
+                  opacity={isDimmed ? 0.12 : 0.86}
+                  className={isTraced ? styles.traceEdge : styles.treeEdge}
+                />
+              );
+            })}
+
+            {NODES.map((node) => {
+              const position = POS[node.id];
+              if (!position) return null;
+
+              const category = CAT[node.cat] || CATEGORY_TONE[node.cat] || {};
+              const isSelected = selectedId === node.id;
+              const isAncestor = lineage.ancestors.has(node.id);
+              const isDescendant = lineage.descendants.has(node.id);
+              const isTraced = lineage.nodes.has(node.id);
+              const isDimmed = hasTrace && !isTraced;
+              const tone = category.color || category.tone || "#6F4A2A";
+              const label = node.name.length > 4 ? [node.name.slice(0, 4), node.name.slice(4)] : [node.name];
+
+              return (
+                <g
+                  key={node.id}
+                  className={`${styles.treeNode} ${isSelected ? styles.treeNodeSelected : ""}`}
+                  transform={`translate(${position.x},${position.y})`}
+                  onClick={() => onSelect(node.id)}
+                  style={{
+                    "--tree-node-tone": isSelected ? "#8f2f28" : tone,
+                    opacity: isDimmed ? 0.2 : 1,
+                  }}
+                >
+                  {isTraced && (
+                    <circle
+                      r={NODE_RADIUS + (isSelected ? 15 : 9)}
+                      fill={isSelected ? "rgba(143,47,40,.13)" : "rgba(49,79,82,.1)"}
+                      className={styles.traceHalo}
+                    />
+                  )}
+                  <circle r={NODE_RADIUS} fill="rgba(255,249,230,.92)" />
+                  <circle r={NODE_RADIUS} fill="none" stroke="var(--tree-node-tone)" strokeWidth={isSelected ? 3 : 2} />
+                  <circle r="4" cy={-NODE_RADIUS - 5} fill={isAncestor ? "#314f52" : isDescendant ? "#8f2f28" : "transparent"} />
+                  {label.map((text, index) => (
+                    <text
+                      key={text}
+                      y={label.length === 1 ? 4 : index === 0 ? -5 : 8}
+                      textAnchor="middle"
+                      fontSize={label.length === 1 ? 10.5 : 9}
+                      fill="#2f2619"
+                      fontFamily='"Noto Serif SC"'
+                      fontWeight="700"
+                    >
+                      {text}
+                    </text>
+                  ))}
+                  <text
+                    y={NODE_RADIUS + 14}
+                    textAnchor="middle"
+                    fontSize="8"
+                    fill="rgba(92,74,51,.62)"
+                    fontFamily='"Noto Serif SC"'
+                  >
+                    {normalizeEraName(node.era)}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
+        </svg>
+
+        <div className={styles.treeControls}>
+          <button type="button" onClick={actions.zoomIn}>放大</button>
+          <button type="button" onClick={actions.zoomOut}>缩小</button>
+          <button type="button" onClick={() => selectedId && actions.panToNode(selectedId, POS)}>归位</button>
+          <button type="button" onClick={actions.resetView}>全卷</button>
+        </div>
       </div>
-    </article>
+    </section>
   );
 }
 
-function AnnotationPanel({ node, categories, relatedNodes, onSelect, onClose }) {
+function AnnotationPanel({ node, categories, predecessorNodes, successorNodes, lineage, onSelect, onClose }) {
   if (!node) {
     return (
       <aside className={styles.annotationPanel}>
         <p className={styles.annotationKicker}>卷旁笺注</p>
-        <h2>择一技艺，读其来路</h2>
+        <h2>择一技艺，溯其来路</h2>
         <p>
-          点击卷轴中的科技点，可见发明缘起、文明意义与后续传承。这里不再呈现字段表，而以注疏方式讲述技术如何进入历史。
+          点击科技树中的节点，可见发明缘起、前驱依赖与后续传承。图中会以朱砂线标出可追溯的技术脉络。
         </p>
       </aside>
     );
@@ -284,16 +393,34 @@ function AnnotationPanel({ node, categories, relatedNodes, onSelect, onClose }) 
         </div>
         <div>
           <dt>文明脉络</dt>
-          <dd>{relatedNodes.length ? `延展至 ${relatedNodes.map((item) => item.name).join("、")}` : "此支暂止，余韵仍在器物与制度之中。"}</dd>
+          <dd>
+            上承 {lineage.ancestors.size} 项技艺，下启 {lineage.descendants.size} 项发明。
+            {successorNodes.length ? ` 近支延展至 ${successorNodes.map((item) => item.name).join("、")}。` : " 此支暂止，余韵仍在器物与制度之中。"}
+          </dd>
         </div>
       </dl>
-      {relatedNodes.length > 0 && (
+      {predecessorNodes.length > 0 && (
+        <div className={styles.lineageGroup}>
+          <span>前驱来路</span>
+          <div className={styles.relatedNodes}>
+            {predecessorNodes.slice(0, 6).map((item) => (
+              <button type="button" key={item.id} onClick={() => onSelect(item.id)}>
+                {item.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {successorNodes.length > 0 && (
+        <div className={styles.lineageGroup}>
+          <span>后继流向</span>
         <div className={styles.relatedNodes}>
-          {relatedNodes.slice(0, 5).map((item) => (
+          {successorNodes.slice(0, 6).map((item) => (
             <button type="button" key={item.id} onClick={() => onSelect(item.id)}>
               {item.name}
             </button>
           ))}
+        </div>
         </div>
       )}
     </aside>
@@ -353,7 +480,22 @@ function SearchSheet({ open, nodes, categories, onSelect, onClose }) {
   );
 }
 
-export function HuaxiaScrollExperience({ NODES, CAT, ADJ, NMAP, timelineConfig }) {
+export function HuaxiaScrollExperience({
+  NODES,
+  POS,
+  CAT,
+  EDGES,
+  ADJ,
+  RADJ,
+  NMAP,
+  timelineConfig,
+  pan,
+  scale,
+  viewportRef,
+  handlers,
+  actions,
+  isDragging,
+}) {
   const categories = useMemo(() => normalizeCategories(CAT), [CAT]);
   const eras = useMemo(
     () => buildEraSections(NODES, timelineConfig, categories),
@@ -363,51 +505,30 @@ export function HuaxiaScrollExperience({ NODES, CAT, ADJ, NMAP, timelineConfig }
   const [selectedId, setSelectedId] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const scrollRef = useRef(null);
-  const eraRefs = useRef({});
-
-  useRevealOnScroll(scrollRef);
 
   useEffect(() => {
     if (!eras.length) return;
     setActiveEraName((current) => current || eras[0].name);
   }, [eras]);
 
-  useEffect(() => {
-    const root = scrollRef.current;
-    if (!root) return undefined;
-
-    const handleScroll = () => {
-      const rootRect = root.getBoundingClientRect();
-      const anchor = rootRect.left + rootRect.width * 0.42;
-      let nextEra = activeEraName;
-      let bestDistance = Number.POSITIVE_INFINITY;
-
-      eras.forEach((era) => {
-        const element = eraRefs.current[era.name];
-        if (!element) return;
-        const rect = element.getBoundingClientRect();
-        const distance = Math.abs(rect.left + rect.width * 0.25 - anchor);
-        if (distance < bestDistance) {
-          bestDistance = distance;
-          nextEra = era.name;
-        }
-      });
-
-      if (nextEra !== activeEraName) setActiveEraName(nextEra);
-    };
-
-    root.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => root.removeEventListener("scroll", handleScroll);
-  }, [activeEraName, eras]);
-
   const selectedNode = selectedId ? NMAP[selectedId] : null;
-  const relatedNodes = selectedNode
+  const lineage = useMemo(
+    () => collectLineage(selectedId, ADJ, RADJ),
+    [selectedId, ADJ, RADJ]
+  );
+  const predecessorNodes = selectedNode
+    ? (RADJ[selectedNode.id] || []).map((id) => NMAP[id]).filter(Boolean)
+    : [];
+  const successorNodes = selectedNode
     ? (ADJ[selectedNode.id] || []).map((id) => NMAP[id]).filter(Boolean)
     : [];
 
   const scrollToEra = (eraName) => {
-    eraRefs.current[eraName]?.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+    setActiveEraName(eraName);
+    const eraNode = NODES.find((node) => normalizeEraName(node.era) === eraName && POS[node.id]);
+    if (eraNode) {
+      actions.panToNode(eraNode.id, POS);
+    }
   };
 
   const selectNode = (id) => {
@@ -415,7 +536,8 @@ export function HuaxiaScrollExperience({ NODES, CAT, ADJ, NMAP, timelineConfig }
     setSearchOpen(false);
     const node = NMAP[id];
     if (node) {
-      window.setTimeout(() => scrollToEra(node.era), 20);
+      setActiveEraName(normalizeEraName(node.era));
+      window.setTimeout(() => actions.panToNode(node.id, POS), 20);
     }
   };
 
@@ -426,30 +548,21 @@ export function HuaxiaScrollExperience({ NODES, CAT, ADJ, NMAP, timelineConfig }
         onSearch={() => setSearchOpen(true)}
         scrollRef={scrollRef}
       >
-        <div className={styles.scrollRoll} aria-hidden="true" />
-        <div className={styles.eraTrack}>
-          <section className={styles.openingPanel}>
-            <div className={styles.openingMark}>夏</div>
-            <p>展开一卷纸，沿时间之水而行。</p>
-            <h2>器物、制度与知识，在此相互生长。</h2>
-          </section>
-          {eras.map((era) => (
-            <EraCard
-              key={era.name}
-              era={era}
-              categories={categories}
-              selectedId={selectedId}
-              onSelect={selectNode}
-              eraRef={(node) => {
-                eraRefs.current[era.name] = node;
-              }}
-            />
-          ))}
-          <section className={styles.closingPanel}>
-            <p>卷末未尽</p>
-            <h2>文明不是终点，而是下一次发明的来处。</h2>
-          </section>
-        </div>
+        <HybridTechTree
+          NODES={NODES}
+          POS={POS}
+          CAT={categories}
+          EDGES={EDGES}
+          selectedId={selectedId}
+          lineage={lineage}
+          pan={pan}
+          scale={scale}
+          viewportRef={viewportRef}
+          handlers={handlers}
+          actions={actions}
+          isDragging={isDragging}
+          onSelect={selectNode}
+        />
       </ScrollContainer>
 
       <Timeline eras={eras} activeEraName={activeEraName} onEraSelect={scrollToEra} />
@@ -457,7 +570,9 @@ export function HuaxiaScrollExperience({ NODES, CAT, ADJ, NMAP, timelineConfig }
       <AnnotationPanel
         node={selectedNode}
         categories={categories}
-        relatedNodes={relatedNodes}
+        predecessorNodes={predecessorNodes}
+        successorNodes={successorNodes}
+        lineage={lineage}
         onSelect={selectNode}
         onClose={() => setSelectedId("")}
       />

@@ -6,8 +6,10 @@
 import { useEffect, useMemo } from "react";
 
 import { useGraphData } from "./hooks/useGraphData";
+import { usePanZoom } from "./hooks/usePanZoom";
 import { HuaxiaScrollExperience } from "./components/scroll/HuaxiaScrollExperience";
 import { LoadingScreen, ErrorScreen } from "./components/StateScreen";
+import { deriveEdges } from "./utils/graphUtils";
 
 function buildFallbackMaps(nodes) {
   const adj = Object.fromEntries(nodes.map((node) => [node.id, node.outEdges || []]));
@@ -24,7 +26,16 @@ function buildFallbackMaps(nodes) {
 }
 
 export default function HuaxiaTechTree() {
-  const { NODES, CAT, ADJ, RADJ, NMAP, timelineConfig, loading, error } = useGraphData();
+  const { NODES, POS, CAT, ADJ, RADJ, NMAP, timelineConfig, loading, error } = useGraphData();
+  const {
+    pan,
+    scale,
+    isDragging,
+    viewportRef,
+    setBounds,
+    handlers,
+    actions,
+  } = usePanZoom();
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -44,6 +55,24 @@ export default function HuaxiaTechTree() {
     }
     return buildFallbackMaps(NODES);
   }, [ADJ, RADJ, NMAP, NODES]);
+  const EDGES = useMemo(() => deriveEdges(NODES, graphMaps.adj), [NODES, graphMaps.adj]);
+
+  useEffect(() => {
+    if (NODES.length === 0 || Object.keys(POS).length === 0) return;
+
+    const timeoutId = setTimeout(() => {
+      const viewportEl = viewportRef.current;
+      if (!viewportEl) return;
+
+      const rect = viewportEl.getBoundingClientRect();
+      const viewportWidth = rect.width;
+      const xValues = Object.values(POS).map((position) => position.x);
+
+      setBounds(Math.min(...xValues), Math.max(...xValues), viewportWidth);
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [NODES, POS, setBounds, viewportRef]);
 
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen error={error} />;
@@ -51,11 +80,19 @@ export default function HuaxiaTechTree() {
   return (
     <HuaxiaScrollExperience
       NODES={NODES}
+      POS={POS}
       CAT={CAT}
+      EDGES={EDGES}
       ADJ={graphMaps.adj}
       RADJ={graphMaps.radj}
       NMAP={graphMaps.nmap}
       timelineConfig={timelineConfig}
+      pan={pan}
+      scale={scale}
+      viewportRef={viewportRef}
+      handlers={handlers}
+      actions={actions}
+      isDragging={isDragging}
     />
   );
 }
