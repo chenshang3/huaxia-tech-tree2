@@ -89,12 +89,21 @@ def validate_required_fields(entries: list) -> list:
     return issues
 
 
+def clean_desc(desc: str) -> str:
+    """清理desc中的HTML标签和其他无效内容"""
+    if not desc:
+        return ""
+    desc = re.sub(r'<[^>]+>', '', desc)
+    desc = re.sub(r'\s+', ' ', desc)
+    return desc.strip()
+
+
 def clean_entry(entry: dict) -> dict:
     """清理条目，只保留需要的字段"""
     return {
         "name": entry.get("name", ""),
         "year": entry.get("year") if entry.get("year") is not None else None,
-        "desc": entry.get("desc", ""),
+        "desc": clean_desc(entry.get("desc", "")),
         "wiki_url": entry.get("wiki_url") or None,
         "id": None,
         "en": None,
