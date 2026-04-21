@@ -13,8 +13,9 @@
   --page-pad-x: clamp(16px, 2vw, 28px);
   --left-codex-width: clamp(160px, 14vw, 228px);
   --tree-gap: 8px;
-  --main-top: 86px;           
+  --main-top: 86px;
   --main-bottom: 86px;
+  --timeline-ruler-height: 40px;
   --panel-duration: 460ms;
   --panel-ease: cubic-bezier(0.4, 0, 0.2, 1);
   width: 100vw;
@@ -414,6 +415,8 @@
 
 .treeViewportShell {
   position: relative;
+  display: grid;
+  grid-template-rows: var(--timeline-ruler-height) minmax(0, 1fr);
   min-height: 0;
   border: 1px solid rgba(74, 53, 28, 0.28);
   background:
@@ -439,12 +442,116 @@
   mix-blend-mode: multiply;
 }
 
+.timelineRuler {
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(74, 53, 28, 0.18);
+  background:
+    linear-gradient(180deg, rgba(255, 252, 236, 0.88), rgba(234, 215, 176, 0.56)),
+    linear-gradient(90deg, rgba(49, 79, 82, 0.06), transparent 16%, transparent 84%, rgba(143, 47, 40, 0.08));
+}
+
+.timelineRulerPointer {
+  position: absolute;
+  left: 50%;
+  top: 1px;
+  z-index: 3;
+  width: 18px;
+  height: 22px;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 2px 3px rgba(73, 48, 18, 0.18));
+}
+
+.timelineRulerPointer svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.timelineRulerPointer polygon {
+  fill: rgba(245, 230, 200, 0.96);
+  stroke: rgba(143, 47, 40, 0.72);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.timelineRuler::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 55%, rgba(49, 79, 82, 0.08), transparent 26%),
+    linear-gradient(90deg, rgba(74, 53, 28, 0.06), transparent 10%, transparent 90%, rgba(74, 53, 28, 0.08));
+  mix-blend-mode: multiply;
+}
+
+.timelineRulerSvg {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: hidden;
+}
+
+.timelineRulerLabels {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.timelineRulerRail,
+.timelineRulerTick,
+.timelineRulerBoundary {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.timelineRulerRail {
+  stroke: rgba(74, 53, 28, 0.34);
+  stroke-width: 1.25px;
+}
+
+.timelineRulerTick {
+  stroke: rgba(74, 53, 28, 0.42);
+  stroke-width: 1.1px;
+}
+
+.timelineRulerBoundary {
+  stroke: rgba(143, 47, 40, 0.54);
+  stroke-width: 1.5px;
+}
+
+.timelineRulerLabel {
+  position: absolute;
+  color: rgba(47, 38, 25, 0.82);
+  font-family: var(--font-ui);
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  text-shadow:
+    0 0 1px rgba(255, 250, 236, 0.98),
+    0 1px 2px rgba(255, 250, 236, 0.92);
+}
+
+.treeCanvasBody {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .hybridGraphSvg {
   position: relative;
   z-index: 1;
   width: 100%;
   height: 100%;
-  min-height: 560px;
+  min-height: 520px;
   display: block;
   user-select: none;
 }
@@ -907,17 +1014,20 @@
   left: var(--page-pad-x);
   right: calc(var(--annotation-width) + var(--side-gap));
   bottom: 26px;
-  min-height: 44px;
+  min-height: 38px;
   display: flex;
   align-items: center;
   gap: 0;
   overflow: hidden;
-  padding: 0 8px;
-  background: rgba(232, 211, 169, 0.64);
-  border-top: 1px solid rgba(74, 53, 28, 0.22);
-  border-bottom: 1px solid rgba(74, 53, 28, 0.22);
+  padding: 0 6px;
+  background:
+    linear-gradient(180deg, rgba(252, 247, 235, 0.54), rgba(232, 211, 169, 0.28)),
+    rgba(245, 230, 200, 0.34);
+  border-top: 1px solid rgba(74, 53, 28, 0.14);
+  border-bottom: 1px solid rgba(74, 53, 28, 0.18);
   border-radius: var(--component-radius-panel);
-  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 24px rgba(73, 48, 18, 0.1);
+  backdrop-filter: blur(4px);
   scrollbar-width: none;
 }
 
@@ -930,9 +1040,9 @@
   position: absolute;
   left: 52px;
   right: 52px;
-  top: 50%;
+  top: 70%;
   height: 1px;
-  background: rgba(74, 53, 28, 0.32);
+  background: rgba(74, 53, 28, 0.22);
 }
 
 .timelineStart,
@@ -940,9 +1050,9 @@
   position: relative;
   z-index: 1;
   flex: 0 0 44px;
-  color: var(--cinnabar);
+  color: rgba(92, 74, 51, 0.72);
   font-family: var(--font-ui);
-  font-size: 12px;
+  font-size: 11px;
   padding: 0;
   text-align: center;
 }
@@ -954,22 +1064,22 @@
   min-width: 0;
   border: 0;
   background: transparent;
-  padding: 14px 2px;
-  color: var(--ink-soft);
+  padding: 11px 2px;
+  color: rgba(92, 74, 51, 0.82);
   font-family: var(--font-ui);
-  font-size: clamp(8px, 0.72vw, 12px);
-  transition: color 300ms ease-in-out;
+  font-size: clamp(8px, 0.68vw, 11px);
+  transition: color 300ms ease-in-out, opacity 300ms ease-in-out;
 }
 
 .timelineItem::before {
   content: "";
   position: absolute;
   left: 50%;
-  top: 50%;
-  width: 9px;
-  height: 9px;
-  border: 1px solid rgba(74, 53, 28, 0.42);
-  background: var(--paper);
+  top: 70%;
+  width: 7px;
+  height: 7px;
+  border: 1px solid rgba(74, 53, 28, 0.28);
+  background: rgba(245, 230, 200, 0.8);
   transform: translate(-50%, -50%) rotate(45deg);
   transition: background 300ms ease-in-out, transform 300ms ease-in-out, border-color 300ms ease-in-out;
 }
@@ -977,10 +1087,14 @@
 .timelineItem span {
   position: relative;
   display: block;
-  transform: translateY(-15px);
+  transform: translateY(-10px);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.timelineItem:hover {
+  color: var(--ink);
 }
 
 .timelineItemActive {
@@ -990,7 +1104,7 @@
 .timelineItemActive::before {
   background: var(--cinnabar);
   border-color: var(--cinnabar);
-  transform: translate(-50%, -50%) rotate(45deg) scale(1.34);
+  transform: translate(-50%, -50%) rotate(45deg) scale(1.14);
 }
 
 .annotationPanel {              /* 右边栏调节 */

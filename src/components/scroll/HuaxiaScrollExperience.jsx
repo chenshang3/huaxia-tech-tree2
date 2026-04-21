@@ -1,72 +1,32 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "./HuaxiaScrollExperience.module.css";
 import {
+  CATEGORY_TONE,
+  DEFAULT_PANEL_COLLAPSE_EFFECT,
+  ERA_ALIASES,
+  ERA_THEMES,
+  RULER_LABEL_FONT_SIZE,
+  RULER_LABEL_Y,
+  RULER_MAJOR_TICK_HEIGHT,
+  RULER_MINOR_TICK_HEIGHT,
+  RULER_RAIL_Y,
+  RULER_VIEW_BOX_HEIGHT,
+  VIEW_BOX_WIDTH,
+} from "./huaxiaScrollConstants";
+import {
   ERA_BACKGROUNDS_BY_NAME,
   ERA_BACKGROUND_SETTINGS,
 } from "../../config/eraBackgrounds";
 import { NodeTooltip } from "../NodeTooltip";
 import { NODE_RADIUS, VIEW_BOX } from "../../utils/constants";
 import { edgePath } from "../../utils/graphUtils";
-import { computeEraTimelinePositions } from "../../utils/timelineUtils";
+import { buildTimelineTicks, computeEraTimelinePositions } from "../../utils/timelineUtils";
 import { buildRadiusCssVars } from "../../config/uiConfig";
 
-export const PANEL_COLLAPSE_EFFECTS = {
-  SLIDE: "slide",
-  FADE: "fade",
-  SCALE: "scale",
-  INK: "ink",
-};
-
-export const DEFAULT_PANEL_COLLAPSE_EFFECT = PANEL_COLLAPSE_EFFECTS.SLIDE;
-
-const CATEGORY_TONE = {
-  craft: { name: "工艺", tone: "#8A5F32", seal: "匠" },
-  metallurgy: { name: "冶金", tone: "#6F4A2A", seal: "金" },
-  culture: { name: "文教", tone: "#405A55", seal: "文" },
-  science: { name: "格物", tone: "#355C63", seal: "理" },
-  medicine: { name: "医药", tone: "#4D6B50", seal: "医" },
-  engineering: { name: "营造", tone: "#7B5739", seal: "工" },
-  military: { name: "军器", tone: "#7B2E2E", seal: "兵" },
-  navigation: { name: "舟舆", tone: "#2F5B62", seal: "航" },
-  textile: { name: "织造", tone: "#8D5D56", seal: "织" },
-  trade: { name: "互市", tone: "#72572B", seal: "市" },
-  agriculture: { name: "农政", tone: "#5F6F3A", seal: "耕" },
-  math: { name: "算学", tone: "#514F64", seal: "算" },
-};
-
-const ERA_THEMES = {
-  "新石器": "取土为器，磨石成形，先民开始以双手改写自然。",
-  "黄帝时期": "衣被天下的传说在此萌芽，丝与医共同进入文明记忆。",
-  "夏朝": "青铜初兴，礼器与权力一同铸入火光。",
-  "商朝": "甲骨有辞，文字使祭祀、政治与历史开始被保存。",
-  "周朝": "礼乐成制，器物与制度共同构成文明秩序。",
-  "春秋": "铁器入田，诸侯竞逐中孕育生产力的跃迁。",
-  "战国": "百家争鸣，农具、兵器与方术在变法中并进。",
-  "秦朝": "车同轨，书同文，工程与治理压缩成统一的尺度。",
-  "西汉": "凿空西域，纸、丝、历法和道路把世界接入中原。",
-  "东汉": "知识落于纸上，观天测地之器体现实证精神。",
-  "三国": "乱世促成军工、水利与稻作技术的快速流动。",
-  "两晋": "士人书写山水，工艺与医药在迁徙中延续。",
-  "南北朝": "南北交汇，佛寺、农书与本草塑造新的技术网络。",
-  "隋朝": "大运河贯通南北，帝国重新组织人力、粮食与交通。",
-  "唐朝": "万国来朝，印刷、药物、织造与航路进入盛世节奏。",
-  "五代十国": "山河分裂而技艺未断，地方工匠保存火种。",
-  "宋朝": "市井繁盛，火药、活字、瓷器与航海迎来密集突破。",
-  "元朝": "欧亚贯通，天文、农政与交通在更大尺度上流转。",
-  "明朝": "海路远行，营造、医药、瓷业与百科式知识成熟。",
-  "清朝": "传统技艺精细化，西学东渐带来新的观察方式。",
-  "近代": "机器、铁路与新式教育打开古今交汇的门缝。",
-  "现代": "古老技艺进入现代体系，文明记忆转化为新的创造力。",
-};
-
-const ERA_ALIASES = {
-  "上古": "新石器",
-  "汉朝": "西汉",
-  "秦汉": "东汉",
-  "隋唐": "唐朝",
-  "北宋": "宋朝",
-  "南宋": "宋朝",
-};
+export {
+  DEFAULT_PANEL_COLLAPSE_EFFECT,
+  PANEL_COLLAPSE_EFFECTS,
+} from "./huaxiaScrollConstants";
 
 function normalizeCategories(categories) {
   if (!Array.isArray(categories)) return categories || {};
@@ -216,6 +176,76 @@ function ScrollContainer({ children, activeEraName, onSearch, scrollRef }) {
   );
 }
 
+function TimelineRuler({ timelineConfig, panX, scale, viewportWidthPx }) {
+  const ticks = useMemo(
+    () => buildTimelineTicks({
+      timelineConfig,
+      scale,
+      viewportWidthPx,
+      viewBoxWidth: VIEW_BOX_WIDTH,
+      panX,
+    }),
+    [timelineConfig, scale, viewportWidthPx, panX]
+  );
+
+  return (
+    <div className={styles.timelineRuler} aria-hidden="true">
+      <div className={styles.timelineRulerPointer}>
+        <svg viewBox="0 0 20 24" role="presentation" focusable="false">
+          <polygon points="5,2 15,2 15,13 10,19 5,13" />
+        </svg>
+      </div>
+      <svg
+        className={styles.timelineRulerSvg}
+        viewBox={`0 0 ${VIEW_BOX_WIDTH} ${RULER_VIEW_BOX_HEIGHT}`}
+        preserveAspectRatio="none"
+        shapeRendering="geometricPrecision"
+      >
+        <line
+          className={styles.timelineRulerRail}
+          x1="0"
+          y1={RULER_RAIL_Y}
+          x2={VIEW_BOX_WIDTH}
+          y2={RULER_RAIL_Y}
+        />
+        <g transform={`translate(${panX}, 0) scale(${scale}, 1)`}>
+          {ticks.map((tick) => {
+            const tickHeight = tick.isMajor ? RULER_MAJOR_TICK_HEIGHT : RULER_MINOR_TICK_HEIGHT;
+            return (
+              <g key={`tick-${tick.year}`}>
+                <line
+                  className={tick.isBoundary ? styles.timelineRulerBoundary : styles.timelineRulerTick}
+                  x1={tick.x}
+                  y1={RULER_RAIL_Y - tickHeight}
+                  x2={tick.x}
+                  y2={RULER_RAIL_Y}
+                />
+              </g>
+            );
+          })}
+        </g>
+      </svg>
+      <div className={styles.timelineRulerLabels} aria-hidden="true">
+        {ticks.map((tick) => (
+          tick.label ? (
+            <span
+              key={`label-${tick.year}`}
+              className={styles.timelineRulerLabel}
+              style={{
+                left: `${(tick.viewportX / VIEW_BOX_WIDTH) * 100}%`,
+                top: `${RULER_LABEL_Y}px`,
+                fontSize: `${RULER_LABEL_FONT_SIZE}px`,
+              }}
+            >
+              {tick.label}
+            </span>
+          ) : null
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Timeline({ eras, activeEraName, onEraSelect }) {
   return (
     <nav className={styles.timeline} aria-label="时代索引">
@@ -297,7 +327,7 @@ function TreeCodexPanel({ activeEra, selectedNode, lineage, categoryStats, total
             已选「{selectedNode.name}」，上承 {lineage.ancestors.size} 项，下启 {lineage.descendants.size} 项。朱砂线为当前脉络，黛青点为前驱，朱砂点为后继。
           </p>
         ) : (
-          <p>悬停查看简注，点击节点展开溯源；拖动画卷时，下方时间线会按视野位置自动响应。</p>
+          <p>悬停查看简注，点击节点展开溯源；顶部时间尺和下方朝代条都会随视野同步响应。</p>
         )}
       </div>
     </aside>
@@ -323,10 +353,35 @@ function HybridTechTree({
   onSelect,
   leftOpen,
   onToggleLeft,
+  timelineConfig,
 }) {
   const hasTrace = Boolean(selectedId);
   const [hoveredNode, setHoveredNode] = useState(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const treeViewportRef = useRef(null);
+  const [viewportWidthPx, setViewportWidthPx] = useState(VIEW_BOX_WIDTH);
+
+  useEffect(() => {
+    const viewportShell = treeViewportRef.current;
+    if (!viewportShell) return undefined;
+
+    const updateViewportWidth = () => {
+      const width = viewportShell.getBoundingClientRect().width;
+      setViewportWidthPx(width || VIEW_BOX_WIDTH);
+    };
+
+    updateViewportWidth();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateViewportWidth);
+      return () => window.removeEventListener("resize", updateViewportWidth);
+    }
+
+    const observer = new ResizeObserver(() => updateViewportWidth());
+    observer.observe(viewportShell);
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <section className={styles.treeManuscript} aria-label="华夏科技树图谱">
@@ -341,131 +396,140 @@ function HybridTechTree({
         isOpen={leftOpen}
       />
 
-      <div className={styles.treeViewportShell} data-tree-viewport>
-        <svg
-          ref={viewportRef}
-          className={styles.hybridGraphSvg}
-          viewBox={VIEW_BOX}
-          preserveAspectRatio="xMidYMin meet"
-          xmlns="http://www.w3.org/2000/svg"
-          onWheel={handlers.onWheel}
-          onMouseDown={handlers.onMouseDown}
-          onMouseMove={handlers.onMouseMove}
-          onMouseUp={handlers.onMouseUp}
-          onMouseLeave={handlers.onMouseLeave}
-          style={{ cursor: isDragging ? "grabbing" : "grab" }}
-        >
-          <defs>
-            <pattern id="hybridPaperGrid" width="54" height="54" patternUnits="userSpaceOnUse">
-              <path d="M 54 0 L 0 0 0 54" fill="none" stroke="rgba(74,53,28,.08)" strokeWidth=".7" />
-            </pattern>
-            <marker id="hybridArrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
-              <path d="M0,0 L0,7 L7,3.5z" fill="rgba(74,53,28,.42)" />
-            </marker>
-            <marker id="hybridArrowTrace" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-              <path d="M0,0 L0,8 L8,4z" fill="#8f2f28" />
-            </marker>
-          </defs>
+      <div ref={treeViewportRef} className={styles.treeViewportShell} data-tree-viewport>
+        <TimelineRuler
+          timelineConfig={timelineConfig}
+          panX={pan.x}
+          scale={scale}
+          viewportWidthPx={viewportWidthPx}
+        />
 
-          <g transform={`translate(${pan.x},${pan.y}) scale(${scale})`}>
-            {EDGES.map((edge) => {
-              const edgeKey = `${edge.from}->${edge.to}`;
-              const isTraced = lineage.edges.has(edgeKey);
-              const isDimmed = hasTrace && !isTraced;
-
-              return (
-                <path
-                  key={edgeKey}
-                  d={edgePath(edge.from, edge.to, POS, NODE_RADIUS)}
-                  fill="none"
-                  stroke={isTraced ? "#8f2f28" : "rgba(74,53,28,.34)"}
-                  strokeWidth={isTraced ? 3.2 : 1.35}
-                  markerEnd={isTraced ? "url(#hybridArrowTrace)" : "url(#hybridArrow)"}
-                  opacity={isDimmed ? 0.38 : 0.96}        // 连线透明度
-                  className={isTraced ? styles.traceEdge : styles.treeEdge}
-                />
-              );
-            })}
-
-            {NODES.map((node) => {
-              const position = POS[node.id];
-              if (!position) return null;
-
-              const category = CAT[node.cat] || CATEGORY_TONE[node.cat] || {};
-              const isSelected = selectedId === node.id;
-              const isTraced = lineage.nodes.has(node.id);
-              const isDimmed = hasTrace && !isTraced;
-              const tone = category.color || category.tone || "#6F4A2A";
-              const label = node.name.length > 4 ? [node.name.slice(0, 4), node.name.slice(4)] : [node.name];
-
-              return (
-                <g
-                  key={node.id}
-                  className={`${styles.treeNode} ${isSelected ? styles.treeNodeSelected : ""}`}
-                  transform={`translate(${position.x},${position.y})`}
-                  onClick={() => onSelect(node.id)}
-                  onMouseEnter={(event) => {
-                    const rect = event.currentTarget.getBoundingClientRect();
-                    setHoveredNode(node);
-                    setTooltipPos({
-                      x: rect.right,
-                      y: rect.top,
-                    });
-                  }}
-                  onMouseLeave={() => setHoveredNode(null)}
-                  style={{
-                    "--tree-node-tone": isSelected ? "#8f2f28" : tone,
-                    opacity: isDimmed ? 0.3 : 1,          // 节点透明度
-                  }}
-                >
-                  {isTraced && (
-                    <circle
-                      r={NODE_RADIUS + (isSelected ? 15 : 9)}
-                      fill={isSelected ? "rgba(143,47,40,.13)" : "rgba(49,79,82,.1)"}
-                      className={styles.traceHalo}
-                    />
-                  )}
-                  <circle r={NODE_RADIUS} fill="rgba(255,249,230,.92)" />
-                  <circle r={NODE_RADIUS} fill="none" stroke="var(--tree-node-tone)" strokeWidth={isSelected ? 3 : 2} />
-                  {label.map((text, index) => (
-                    <text
-                      key={text}
-                      y={label.length === 1 ? 4 : index === 0 ? -5 : 8}
-                      textAnchor="middle"
-                      fontSize={label.length === 1 ? 10.5 : 9}
-                      fill="#2f2619"
-                      fontFamily='"Noto Serif SC"'
-                      fontWeight="700"
-                    >
-                      {text}
-                    </text>
-                  ))}
-                  <text
-                    y={NODE_RADIUS + 14}
-                    textAnchor="middle"
-                    fontSize="8"
-                    fill="rgba(92,74,51,.62)"
-                    fontFamily='"Noto Serif SC"'
-                  >
-                    {normalizeEraName(node.era)}
-                  </text>
-                </g>
-              );
-            })}
-          </g>
-        </svg>
-
-        <div className={styles.treeControls}>
-          <button type="button" className="graph-view__control-button" onClick={actions.zoomIn}>+</button>
-          <button type="button" className="graph-view__control-button" onClick={actions.zoomOut}>−</button>
-          <button
-            type="button"
-            className="graph-view__control-button graph-view__control-button--small"
-            onClick={() => selectedId ? actions.panToNode(selectedId, POS) : actions.resetView()}
-            title="回归原位"
+        <div className={styles.treeCanvasBody}>
+          <svg
+            ref={viewportRef}
+            className={styles.hybridGraphSvg}
+            viewBox={VIEW_BOX}
+            preserveAspectRatio="xMidYMin meet"
+            xmlns="http://www.w3.org/2000/svg"
+            onWheel={handlers.onWheel}
+            onMouseDown={handlers.onMouseDown}
+            onMouseMove={handlers.onMouseMove}
+            onMouseUp={handlers.onMouseUp}
+            onMouseLeave={handlers.onMouseLeave}
+            style={{ cursor: isDragging ? "grabbing" : "grab" }}
           >
-            ◎
-          </button>
+            <defs>
+              <pattern id="hybridPaperGrid" width="54" height="54" patternUnits="userSpaceOnUse">
+                <path d="M 54 0 L 0 0 0 54" fill="none" stroke="rgba(74,53,28,.08)" strokeWidth=".7" />
+              </pattern>
+              <marker id="hybridArrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+                <path d="M0,0 L0,7 L7,3.5z" fill="rgba(74,53,28,.42)" />
+              </marker>
+              <marker id="hybridArrowTrace" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L0,8 L8,4z" fill="#8f2f28" />
+              </marker>
+            </defs>
+
+            <g transform={`translate(${pan.x},${pan.y}) scale(${scale})`}>
+              {EDGES.map((edge) => {
+                const edgeKey = `${edge.from}->${edge.to}`;
+                const isTraced = lineage.edges.has(edgeKey);
+                const isDimmed = hasTrace && !isTraced;
+
+                return (
+                  <path
+                    key={edgeKey}
+                    d={edgePath(edge.from, edge.to, POS, NODE_RADIUS)}
+                    fill="none"
+                    stroke={isTraced ? "#8f2f28" : "rgba(74,53,28,.34)"}
+                    strokeWidth={isTraced ? 3.2 : 1.35}
+                    markerEnd={isTraced ? "url(#hybridArrowTrace)" : "url(#hybridArrow)"}
+                    opacity={isDimmed ? 0.38 : 0.96}
+                    className={isTraced ? styles.traceEdge : styles.treeEdge}
+                  />
+                );
+              })}
+
+              {NODES.map((node) => {
+                const position = POS[node.id];
+                if (!position) return null;
+
+                const category = CAT[node.cat] || CATEGORY_TONE[node.cat] || {};
+                const isSelected = selectedId === node.id;
+                const isTraced = lineage.nodes.has(node.id);
+                const isDimmed = hasTrace && !isTraced;
+                const tone = category.color || category.tone || "#6F4A2A";
+                const label = node.name.length > 4 ? [node.name.slice(0, 4), node.name.slice(4)] : [node.name];
+
+                return (
+                  <g
+                    key={node.id}
+                    className={`${styles.treeNode} ${isSelected ? styles.treeNodeSelected : ""}`}
+                    transform={`translate(${position.x},${position.y})`}
+                    onClick={() => onSelect(node.id)}
+                    onMouseEnter={(event) => {
+                      const rect = event.currentTarget.getBoundingClientRect();
+                      setHoveredNode(node);
+                      setTooltipPos({
+                        x: rect.right,
+                        y: rect.top,
+                      });
+                    }}
+                    onMouseLeave={() => setHoveredNode(null)}
+                    style={{
+                      "--tree-node-tone": isSelected ? "#8f2f28" : tone,
+                      opacity: isDimmed ? 0.4 : 1,
+                    }}
+                  >
+                    {isTraced && (
+                      <circle
+                        r={NODE_RADIUS + (isSelected ? 15 : 9)}
+                        fill={isSelected ? "rgba(143,47,40,.13)" : "rgba(49,79,82,.1)"}
+                        className={styles.traceHalo}
+                      />
+                    )}
+                    <circle r={NODE_RADIUS} fill="rgba(255,249,230,.92)" />
+                    <circle r={NODE_RADIUS} fill="none" stroke="var(--tree-node-tone)" strokeWidth={isSelected ? 3 : 2} />
+                    {label.map((text, index) => (
+                      <text
+                        key={text}
+                        y={label.length === 1 ? 4 : index === 0 ? -5 : 8}
+                        textAnchor="middle"
+                        fontSize={label.length === 1 ? 10.5 : 9}
+                        fill="#2f2619"
+                        fontFamily='"Noto Serif SC"'
+                        fontWeight="700"
+                      >
+                        {text}
+                      </text>
+                    ))}
+                    <text
+                      y={NODE_RADIUS + 14}
+                      textAnchor="middle"
+                      fontSize="8"
+                      fill="rgba(92,74,51,.62)"
+                      fontFamily='"Noto Serif SC"'
+                    >
+                      {normalizeEraName(node.era)}
+                    </text>
+                  </g>
+                );
+              })}
+            </g>
+          </svg>
+
+          <div className={styles.treeControls}>
+            <button type="button" className="graph-view__control-button" onClick={actions.zoomIn}>+</button>
+            <button type="button" className="graph-view__control-button" onClick={actions.zoomOut}>−</button>
+            <button
+              type="button"
+              className="graph-view__control-button graph-view__control-button--small"
+              onClick={() => selectedId ? actions.panToNode(selectedId, POS) : actions.resetView()}
+              title="回归原位"
+            >
+              ◎
+            </button>
+          </div>
         </div>
       </div>
 
@@ -726,6 +790,7 @@ export function HuaxiaScrollExperience({
           onSelect={selectNode}
           leftOpen={leftOpen}
           onToggleLeft={() => setLeftOpen((open) => !open)}
+          timelineConfig={timelineConfig}
         />
       </ScrollContainer>
 
