@@ -341,7 +341,7 @@
   },
   "ancient_chinese_bookbinding": {
     "name": "古书装订",
-    "image": null
+    "image": "ancient_chinese_bookbinding.jpg"
   },
   "water_powered_celestial_globe": {
     "name": "水运浑象",
@@ -349,19 +349,19 @@
   },
   "cao_ship": {
     "name": "漕船",
-    "image": null
+    "image": "cao_ship.jpg"
   },
   "water_powered_bellows": {
     "name": "水力风箱",
-    "image": null
+    "image": "water_powered_bellows.png"
   },
   "ancient_chinese_drilling": {
     "name": "钻探",
-    "image": null
+    "image": "ancient_chinese_drilling.jpg"
   },
   "multi_tube_seed_drill": {
     "name": "多管条播机",
-    "image": null
+    "image": "multi_tube_seed_drill.jpg"
   },
   "negative_number_notation": {
     "name": "负数",
@@ -369,7 +369,7 @@
   },
   "refining_furnace": {
     "name": "精炼炉",
-    "image": null
+    "image": "refining_furnace.jpg"
   },
   "wheelbarrow": {
     "name": "独轮车",
@@ -393,7 +393,7 @@
   },
   "ink_from_petroleum_soot": {
     "name": "油墨",
-    "image": null
+    "image": "ink_from_petroleum_soot.jpg"
   },
   "kite_human_flight": {
     "name": "风筝载人飞行",
@@ -413,23 +413,23 @@
   },
   "automatic_wine_boat_with_mechanical_figures": {
     "name": "自行舟",
-    "image": null
+    "image": "automatic_wine_boat_with_mechanical_figures.jpg"
   },
   "continuous_chain_drive": {
     "name": "链条传送",
-    "image": null
+    "image": "continuous_chain_drive.jpg"
   },
   "double_gate_sluice": {
     "name": "斗门水闸",
-    "image": null
+    "image": "double_gate_sluice.png"
   },
   "double_piston_gunpowder_flamethrower": {
     "name": "火焰喷射器",
-    "image": null
+    "image": "double_piston_gunpowder_flamethrower.jpg"
   },
   "earliest_printed_map": {
     "name": "印刷地图",
-    "image": null
+    "image": "earliest_printed_map.jpg"
   },
   "rectangular_coffin_and_outer_coffin": {
     "name": "长方形棺椁",
@@ -453,11 +453,11 @@
   },
   "heavy_iron_plow_with_moldboard": {
     "name": "带犁板铁犁",
-    "image": null
+    "image": "heavy_iron_plow_with_moldboard.jpg"
   },
   "curved_shaft_plow": {
     "name": "曲辕犁",
-    "image": null
+    "image": "curved_shaft_plow.png"
   },
   "straight_beam_plow": {
     "name": "直辕犁",
@@ -465,7 +465,7 @@
   },
   "celestial_globe": {
     "name": "浑象",
-    "image": null
+    "image": "celestial_globe.jpg"
   },
   "chain_drive": {
     "name": "链条传动",
@@ -477,7 +477,7 @@
   },
   "wind_powered_mill": {
     "name": "风力磨坊",
-    "image": null
+    "image": "wind_powered_mill.jpg"
   },
   "pig_iron": {
     "name": "生铁",
@@ -485,10 +485,54 @@
   },
   "cotton_spinning": {
     "name": "棉纺",
-    "image": null
+    "image": "cotton_spinning.png"
   },
   "flat_bottomed_shallow_draft_ship": {
     "name": "沙船",
     "image": "flat_bottomed_shallow_draft_ship.jpg"
+  },
+  "paddle_wheel_boat": {
+    "name": "车船",
+    "image": null
+  },
+  "cannon": {
+    "name": "火炮",
+    "image": "cannon.jpeg"
+  },
+  "tiger_crouching_cannon": {
+    "name": "虎蹲炮",
+    "image": "tiger_crouching_cannon.jpg"
+  },
+  "ancient_chinese_war_chariot": {
+    "name": "战车",
+    "image": "ancient_chinese_war_chariot.jpg"
+  },
+  "chinese_calligraphy": {
+    "name": "书法",
+    "image": "chinese_calligraphy.jpg"
+  },
+  "seal_carving_art": {
+    "name": "篆刻",
+    "image": "seal_carving_art.png"
+  },
+  "taichu_calendar": {
+    "name": "太初历",
+    "image": "taichu_calendar.jpg"
+  },
+  "oil_lamp": {
+    "name": "油灯",
+    "image": null
+  },
+  "fire_striker": {
+    "name": "火折子",
+    "image": null
+  },
+  "hot_pot": {
+    "name": "火锅",
+    "image": "hot_pot.jpg"
+  },
+  "bronze_mirror": {
+    "name": "铜镜",
+    "image": "bronze_mirror.jpg"
   }
 }

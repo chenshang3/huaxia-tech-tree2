@@ -89,7 +89,7 @@ def main():
         with open(MAPPING_FILE, 'r', encoding='utf-8') as f:
             existing = json.load(f)
     
-    matched_ids = set(existing.keys())
+    matched_ids = {node_id for node_id, info in existing.items() if info.get("image")}
     print(f"总节点数: {len(nodes)}")
     print(f"已匹配图片: {len(matched_ids)}")
     print()
