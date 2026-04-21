@@ -31,3 +31,6 @@ CLAUDE.md*
 
 # Scripts - ignore HTML files (raw wiki dumps)
 scripts/output/*.html
+scripts/venv
+/home/mr/code/huazhi/scripts/venv
+/home/mr/code/huazhi/venv
