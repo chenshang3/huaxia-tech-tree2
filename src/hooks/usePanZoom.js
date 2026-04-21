@@ -29,11 +29,14 @@ export function usePanZoom() {
   const boundsConfigRef = useRef({
     minNodeX: 0,
     maxNodeX: 0,
+    minNodeY: 0,
+    maxNodeY: 0,
     viewportWidth: Infinity, // 这里也应该是 SVG 坐标宽度
+    viewportHeight: Infinity,
   });
 
-  const setBoundsConfig = useCallback((minNodeX, maxNodeX, viewportWidth) => {
-    boundsConfigRef.current = { minNodeX, maxNodeX, viewportWidth };
+  const setBoundsConfig = useCallback((minNodeX, maxNodeX, viewportWidth, minNodeY = 0, maxNodeY = 0, viewportHeight = Infinity) => {
+    boundsConfigRef.current = { minNodeX, maxNodeX, minNodeY, maxNodeY, viewportWidth, viewportHeight };
   }, []);
 
   const clampPanX = useCallback((x) => {
@@ -45,6 +48,20 @@ export function usePanZoom() {
     const maxPanX = viewportWidth / 2 - minNodeX * currentScale;
 
     return Math.max(minPanX, Math.min(maxPanX, x));
+  }, []);
+
+  const clampPanY = useCallback((y) => {
+    const { minNodeY, maxNodeY, viewportHeight } = boundsConfigRef.current;
+    const currentScale = scaleRef.current;
+    if (!isFinite(viewportHeight)) return y;
+
+    // 垂直拖拽边界：最上节点不能被拖到屏幕 2/3 以下，
+    // 最下节点不能被拖到下方 1/3 区域以上，也就是同一条 2/3 分界线以上。
+    const verticalBoundaryY = viewportHeight * (1/2);
+    const minPanY = verticalBoundaryY - maxNodeY * currentScale;
+    const maxPanY = verticalBoundaryY - minNodeY * currentScale;
+
+    return Math.max(minPanY, Math.min(maxPanY, y));
   }, []);
 
   // 屏幕坐标 -> SVG user space
@@ -79,10 +96,10 @@ export function usePanZoom() {
     const worldX = (anchorX - panRef.current.x) / oldScale;
     const worldY = (anchorY - panRef.current.y) / oldScale;
 
-    const newPanX = clampPanX(anchorX - worldX * newScale);
-    const newPanY = anchorY - worldY * newScale;
-
     scaleRef.current = newScale;
+    const newPanX = clampPanX(anchorX - worldX * newScale);
+    const newPanY = clampPanY(anchorY - worldY * newScale);
+
     panRef.current = {
       ...panRef.current,
       x: newPanX,
@@ -92,7 +109,7 @@ export function usePanZoom() {
     setScale(newScale);
     setPan({ x: newPanX, y: newPanY });
     setTimelinePanX(newPanX);
-  }, [clampPanX]);
+  }, [clampPanX, clampPanY]);
 
   const onWheel = useCallback((e) => {
     e.preventDefault();
@@ -136,7 +153,7 @@ export function usePanZoom() {
 
     const newPan = {
       x: clampPanX(panRef.current.x + dx),
-      y: panRef.current.y + dy,
+      y: clampPanY(panRef.current.y + dy),
     };
 
     panRef.current = {
@@ -147,7 +164,7 @@ export function usePanZoom() {
 
     setPan(newPan);
     setTimelinePanX(newPan.x);
-  }, [clientToSvg, clampPanX]);
+  }, [clientToSvg, clampPanX, clampPanY]);
 
   const onMouseUp = useCallback(() => {
     panRef.current = {
@@ -218,13 +235,13 @@ export function usePanZoom() {
     }
 
     const startPanX = clampPanX(panRef.current.x);
-    const startPanY = panRef.current.y;
+    const startPanY = clampPanY(panRef.current.y);
 
     const targetPanX = clampPanX(center.x - nodePos.x * scaleRef.current);
-    const targetPanY = center.y - nodePos.y * scaleRef.current;
+    const targetPanY = clampPanY(center.y - nodePos.y * scaleRef.current);
 
     // 起点先规范化，避免动画第一帧纠偏
-    if (startPanX !== panRef.current.x) {
+    if (startPanX !== panRef.current.x || startPanY !== panRef.current.y) {
       panRef.current = { ...panRef.current, x: startPanX, y: startPanY };
       setPan({ x: startPanX, y: startPanY });
       setTimelinePanX(startPanX);
@@ -238,7 +255,7 @@ export function usePanZoom() {
       const ease = easeOutExpoNormalized(t);
 
       const nextPanX = clampPanX(startPanX + (targetPanX - startPanX) * ease);
-      const nextPanY = startPanY + (targetPanY - startPanY) * ease;
+      const nextPanY = clampPanY(startPanY + (targetPanY - startPanY) * ease);
 
       panRef.current = { ...panRef.current, x: nextPanX, y: nextPanY };
       setPan({ x: nextPanX, y: nextPanY });
@@ -252,7 +269,7 @@ export function usePanZoom() {
     };
 
     animTargetRef.current = requestAnimationFrame(animate);
-  }, [getViewportCenter, clampPanX]);
+  }, [getViewportCenter, clampPanX, clampPanY]);
 
   return {
     pan,

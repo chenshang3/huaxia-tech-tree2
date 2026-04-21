@@ -263,11 +263,11 @@
 }
 
 .side-panel-toggle--left {
-  left: max(8px, calc(var(--toggle-offset, 0px) - 0px)); /* 12px 是半径，让按钮骑在侧栏边缘。 */
+  left: max(8px, calc(var(--toggle-offset, 0px) - 12px)); /* 12px 是半径，让按钮骑在侧栏边缘。 */
 }
 
 .side-panel-toggle--right {
-  right: max(38px, calc(var(--toggle-offset, 0px) + 30px)); /* 右侧按钮整体向左 30px；数值越大越靠左。 */
+  right: max(8px, calc(var(--toggle-offset, 0px) - 12px)); /* 与左侧同理，贴住右侧边栏边缘。 */
 }
 
 .side-panel-toggle--left[aria-expanded="true"]::before,

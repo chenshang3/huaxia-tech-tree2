@@ -71,9 +71,18 @@ export default function HuaxiaTechTree({ uiConfig: uiConfigOverride } = {}) {
 
       const rect = viewportEl.getBoundingClientRect();
       const viewportWidth = rect.width;
+      const viewportHeight = rect.height;
       const xValues = Object.values(POS).map((position) => position.x);
+      const yValues = Object.values(POS).map((position) => position.y);
 
-      setBounds(Math.min(...xValues), Math.max(...xValues), viewportWidth);
+      setBounds(
+        Math.min(...xValues),
+        Math.max(...xValues),
+        viewportWidth,
+        Math.min(...yValues),
+        Math.max(...yValues),
+        viewportHeight
+      );
     }, 0);
 
     return () => clearTimeout(timeoutId);
