@@ -345,7 +345,7 @@
   },
   "water_powered_celestial_globe": {
     "name": "水运浑象",
-    "image": null
+    "image": "water_powered_celestial_globe.jpg"
   },
   "cao_ship": {
     "name": "漕船",
@@ -373,7 +373,7 @@
   },
   "wheelbarrow": {
     "name": "独轮车",
-    "image": null
+    "image": "wheelbarrow.jpg"
   },
   "water_powered_puppet_theater": {
     "name": "水车动力傀儡戏",
@@ -389,7 +389,7 @@
   },
   "animal_powered_grinding_cart": {
     "name": "磨车",
-    "image": null
+    "image": "animal_powered_grinding_cart.jpg"
   },
   "ink_from_petroleum_soot": {
     "name": "油墨",
@@ -409,7 +409,7 @@
   },
   "leeboard": {
     "name": "披水板",
-    "image": null
+    "image": "leeboard.JPG"
   },
   "automatic_wine_boat_with_mechanical_figures": {
     "name": "自行舟",
@@ -433,7 +433,7 @@
   },
   "rectangular_coffin_and_outer_coffin": {
     "name": "长方形棺椁",
-    "image": null
+    "image": "rectangular_coffin_and_outer_coffin.JPG"
   },
   "turtle_shell_divination": {
     "name": "龟卜",
@@ -505,11 +505,11 @@
   },
   "ancient_chinese_war_chariot": {
     "name": "战车",
-    "image": "ancient_chinese_war_chariot.jpg"
+    "image": "ancient_chinese_war_chariot.png"
   },
   "chinese_calligraphy": {
     "name": "书法",
-    "image": "chinese_calligraphy.jpg"
+    "image": "chinese_calligraphy.png"
   },
   "seal_carving_art": {
     "name": "篆刻",
@@ -521,7 +521,7 @@
   },
   "oil_lamp": {
     "name": "油灯",
-    "image": null
+    "image": "oil_lamp.JPG"
   },
   "fire_striker": {
     "name": "火折子",
