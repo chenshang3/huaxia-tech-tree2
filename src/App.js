@@ -1,6 +1,8 @@
 // ============================================================
 // App.js
-// 主入口文件 - 重导出 HuaxiaTechTree 组件
+// 主入口文件 - 导出 HuaxiaTechTree 组件
 // ============================================================
 
-export { default } from './HuaxiaTechTree';
+import HuaxiaTechTree from './HuaxiaTechTree';
+
+export default HuaxiaTechTree;
