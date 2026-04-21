@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
-const nodesData = require('./data/nodes.json');
+const nodesData = require('./data/final_nodes.json');
 const categoriesData = require('./data/categories.json');
 const timelineConfig = require('./data/timelineConfig.json');
 const uiConfig = require('./data/uiConfig.json');
