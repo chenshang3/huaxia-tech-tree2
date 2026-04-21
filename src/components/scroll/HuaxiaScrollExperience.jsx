@@ -192,8 +192,9 @@ function ScrollContainer({ children, activeEraName, onSearch, scrollRef }) {
     >
       <div className={styles.stageBackdrop} aria-hidden="true" />
       <header className={styles.manuscriptHeader}>
-        <div>
+        <div className={styles.headerBrand}>
           <h1>华夏文明科技树</h1>
+          <span>Huaxia Civilization Tech Tree</span>
         </div>
         <div className={styles.headerActions}>
           <span>{activeEraName}</span>
@@ -377,7 +378,7 @@ function HybridTechTree({
                   stroke={isTraced ? "#8f2f28" : "rgba(74,53,28,.34)"}
                   strokeWidth={isTraced ? 3.2 : 1.35}
                   markerEnd={isTraced ? "url(#hybridArrowTrace)" : "url(#hybridArrow)"}
-                  opacity={isDimmed ? 0.12 : 0.86}
+                  opacity={isDimmed ? 0.38 : 0.96}        // 连线透明度
                   className={isTraced ? styles.traceEdge : styles.treeEdge}
                 />
               );
@@ -411,7 +412,7 @@ function HybridTechTree({
                   onMouseLeave={() => setHoveredNode(null)}
                   style={{
                     "--tree-node-tone": isSelected ? "#8f2f28" : tone,
-                    opacity: isDimmed ? 0.2 : 1,
+                    opacity: isDimmed ? 0.3 : 1,          // 节点透明度
                   }}
                 >
                   {isTraced && (
@@ -517,13 +518,6 @@ function AnnotationPanel({ node, categories, predecessorNodes, successorNodes, l
         <div>
           <dt>传述者</dt>
           <dd>{node.inv || "未详"}</dd>
-        </div>
-        <div>
-          <dt>文明脉络</dt>
-          <dd>
-            上承 {lineage.ancestors.size} 项技艺，下启 {lineage.descendants.size} 项发明。
-            {successorNodes.length ? ` 近支延展至 ${successorNodes.map((item) => item.name).join("、")}。` : " 此支暂止，余韵仍在器物与制度之中。"}
-          </dd>
         </div>
       </dl>
       {predecessorNodes.length > 0 && (
