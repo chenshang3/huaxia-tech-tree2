@@ -6,6 +6,7 @@
  * ============================================================ */
 
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import './NodeTooltip.css';
 
 export function NodeTooltip({ node, CAT, position, isVisible }) {
@@ -17,12 +18,13 @@ export function NodeTooltip({ node, CAT, position, isVisible }) {
     if (!isVisible || !tooltipRef.current) return;
 
     const rect = tooltipRef.current.getBoundingClientRect();
+    const tooltipWidth = rect.width || 280;
     const newPos = { ...position };
 
-    // 检查右边界
-    if (rect.right > window.innerWidth) {
-      newPos.x -= (rect.right - window.innerWidth) + 16;
-    }
+    newPos.x = Math.min(
+      Math.max(position.x + 12, 8),
+      window.innerWidth - tooltipWidth - 8
+    );
 
     // 检查上边界
     if (rect.top < 0) {
@@ -35,10 +37,6 @@ export function NodeTooltip({ node, CAT, position, isVisible }) {
     }
 
     // 检查左边界
-    if (newPos.x < 0) {
-      newPos.x = 8;
-    }
-
     setAdjustedPosition(newPos);
   }, [isVisible, position]);
 
@@ -51,12 +49,12 @@ export function NodeTooltip({ node, CAT, position, isVisible }) {
   // 格式化年份
   const yearStr = !node.year ? '' : node.year < 0 ? `${Math.abs(node.year)} BC` : `${node.year} AD`;
 
-  return (
+  return createPortal(
     <div
       ref={tooltipRef}
       className="node-tooltip"
       style={{
-        left: `${adjustedPosition.x + 12}px`,
+        left: `${adjustedPosition.x}px`,
         top: `${adjustedPosition.y}px`,
       }}
     >
@@ -89,6 +87,7 @@ export function NodeTooltip({ node, CAT, position, isVisible }) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

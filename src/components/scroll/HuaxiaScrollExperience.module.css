@@ -12,7 +12,7 @@
   --side-gap: clamp(12px, 1.3vw, 20px);
   --page-pad-x: clamp(16px, 2vw, 28px);
   --left-codex-width: clamp(160px, 14vw, 228px);
-  --tree-gap: clamp(12px, 1.3vw, 20px);
+  --tree-gap: 8px;
   --main-top: 96px;
   --main-bottom: 86px;
   --panel-duration: 460ms;
@@ -238,7 +238,7 @@
   display: grid;
   grid-template-columns: var(--left-codex-width) minmax(560px, 1fr);
   gap: var(--tree-gap);
-  padding: clamp(12px, 1.5vw, 20px);
+  padding: 8px;
   z-index: 3;
   transition: grid-template-columns var(--panel-duration) var(--panel-ease),
     gap var(--panel-duration) var(--panel-ease);
@@ -532,7 +532,7 @@
 
 .panelToggleLeft {
   top: 50%; /* 垂直居中；要避开内容可改为 46% 或 54%。 */
-  left: calc(var(--page-pad-x) + var(--left-codex-width) + 8px); /* 打开时贴在左栏右缘。 */
+  left: calc(var(--page-pad-x) + var(--left-codex-width) - 7px); /* 左侧按钮整体累计向左 15px；数值越小越靠左。 */
   transform: translateY(-50%); /* 与 top 配合完成垂直居中。 */
 }
 
@@ -563,7 +563,7 @@
 }
 
 .experienceShell[data-left-panel="closed"] .panelToggleLeft {
-  left: 10px;
+  left: -5px;
 }
 
 .experienceShell[data-right-panel="closed"] .panelToggleRight {
@@ -1303,7 +1303,7 @@
     width: calc(100vw - 32px);
     min-width: 0;
     grid-template-columns: 1fr;
-    padding: 18px;
+    padding: 8px;
   }
 
   .treeTitleBlock {
@@ -1330,7 +1330,7 @@
   }
 
   .panelToggleLeft {
-    left: 18px;
+    left: 3px;
   }
 
   .panelToggleRight {

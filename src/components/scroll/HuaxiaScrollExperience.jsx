@@ -363,14 +363,6 @@ function HybridTechTree({
             </marker>
           </defs>
 
-          <path
-            d="M70 578 C240 548, 410 608, 610 568 S1010 540, 1140 586"
-            fill="none"
-            stroke="rgba(49,79,82,.16)"
-            strokeWidth="18"
-            strokeLinecap="round"
-          />
-
           <g transform={`translate(${pan.x},${pan.y}) scale(${scale})`}>
             {EDGES.map((edge) => {
               const edgeKey = `${edge.from}->${edge.to}`;
@@ -397,8 +389,6 @@ function HybridTechTree({
 
               const category = CAT[node.cat] || CATEGORY_TONE[node.cat] || {};
               const isSelected = selectedId === node.id;
-              const isAncestor = lineage.ancestors.has(node.id);
-              const isDescendant = lineage.descendants.has(node.id);
               const isTraced = lineage.nodes.has(node.id);
               const isDimmed = hasTrace && !isTraced;
               const tone = category.color || category.tone || "#6F4A2A";
@@ -433,7 +423,6 @@ function HybridTechTree({
                   )}
                   <circle r={NODE_RADIUS} fill="rgba(255,249,230,.92)" />
                   <circle r={NODE_RADIUS} fill="none" stroke="var(--tree-node-tone)" strokeWidth={isSelected ? 3 : 2} />
-                  <circle r="4" cy={-NODE_RADIUS - 5} fill={isAncestor ? "#314f52" : isDescendant ? "#8f2f28" : "transparent"} />
                   {label.map((text, index) => (
                     <text
                       key={text}
@@ -496,7 +485,11 @@ function AnnotationPanel({ node, categories, predecessorNodes, successorNodes, l
           aria-hidden={!isOpen}
         >
           <p className={styles.annotationKicker}>卷旁笺注</p>
-          <h2>择一技艺，溯其来路</h2>
+          <h2>
+            择一技艺
+            <br />
+            溯其来路
+          </h2>
           <p>
             点击科技树中的节点，可见发明缘起、前驱依赖与后续传承。图中会以朱砂线标出可追溯的技术脉络。
           </p>
