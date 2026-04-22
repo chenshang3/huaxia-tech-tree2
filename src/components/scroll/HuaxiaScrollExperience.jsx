@@ -238,32 +238,6 @@ function collectLineage(nodeId, ADJ, RADJ) {
     edges,
   };
 }
-      walkBack(parentId);
-    });
-  };
-
-  // 递归收集后代(后继)
-  const walkForward = (currentId) => {
-    (ADJ[currentId] || []).forEach((childId) => {
-      edges.add(`${currentId}->${childId}`);
-      if (descendants.has(childId)) return;
-      descendants.add(childId);
-      walkForward(childId);
-    });
-  };
-
-  if (nodeId) {
-    walkBack(nodeId);
-    walkForward(nodeId);
-  }
-
-  return {
-    ancestors,
-    descendants,
-    nodes: new Set([nodeId, ...ancestors, ...descendants].filter(Boolean)),
-    edges,
-  };
-}
 
 /**
  * 构建时代区块数据
