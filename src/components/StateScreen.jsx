@@ -2,7 +2,19 @@
 // StateScreen.jsx
 // 加载与错误状态屏幕
 // ============================================================
+// 职责:
+// 1. LoadingScreen: 数据加载中显示
+// 2. ErrorScreen: 数据加载失败显示
+//
+// 使用场景:
+//   - useGraphData 返回 loading=true -> 显示LoadingScreen
+//   - useGraphData 返回 error有值 -> 显示ErrorScreen
+// ============================================================
 
+/**
+ * 加载中屏幕
+ * 显示品牌名和加载提示
+ */
 export function LoadingScreen() {
   return (
     <div
@@ -32,6 +44,11 @@ export function LoadingScreen() {
   );
 }
 
+/**
+ * 错误屏幕
+ * 显示错误信息和解决提示
+ * @param {string} props.error - 错误信息
+ */
 export function ErrorScreen({ error }) {
   return (
     <div

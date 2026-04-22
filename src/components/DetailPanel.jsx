@@ -1,16 +1,47 @@
-import React from "react";
-import { NodePicture } from "./NodePicture";
-
 // ============================================================
 // DetailPanel.jsx
 // 右侧详情面板组件
 // ============================================================
+// 职责:
+// 1. 显示选中节点的详细信息
+// 2. 显示前驱/后继节点按钮
+// 3. 显示图关系(入度/出度)
+// 4. 空状态提示
+//
+// 显示内容:
+//
+//   - 名称 + 英文名
+//   - 标签: 时代、年份、类别、类别代码
+//   - 图片
+//   - 发明者
+//   - 简介
+//   - 历史意义
+//   - 图关系统计
+//   - 前驱/后继节点按钮
+// ============================================================
 
+import React from "react";
+import { NodePicture } from "./NodePicture";
+
+/**
+ * 右侧详情面板
+ * @param {Object} props
+ * @param {Object} props.selD - 选中的节点数据
+ * @param {Object} props.CAT - 类别映射
+ * @param {Object} props.ADJ - 邻接表(后继)
+ * @param {Object} props.RADJ - 逆邻接表(前驱)
+ * @param {Object} props.NMAP - 节点映射
+ * @param {Function} props.onNode - 节点点击回调
+ * @param {boolean} props.isOpen - 展开状态
+ * @param {Function} props.setIsOpen - 设置展开状态
+ */
 export const DetailPanel = React.memo(function DetailPanel({ selD, CAT, ADJ, RADJ, NMAP, onNode, isOpen, setIsOpen }) {
+  // 面板样式类名
   const panelClassName = `side-panel detail-panel${isOpen ? "" : " side-panel--collapsed"}`;
 
   return (
     <>
+      {/* 折叠按钮 */}
       <button
         type="button"
         onClick={() => setIsOpen(p => !p)}
@@ -24,8 +55,10 @@ export const DetailPanel = React.memo(function DetailPanel({ selD, CAT, ADJ, RAD
       />
       <aside className={panelClassName} style={{ "--panel-width": "228px" }}>
         <div className="side-panel__content detail-panel__content">
+      {/* 有选中节点 */}
       {selD ? (
         <div className="detail-panel__selected">
+          {/* 头部: 名称+英文名 */}
           <div className="detail-panel__header">
             <div className="detail-panel__title" style={{ "--detail-accent": CAT[selD.cat]?.color ?? "#c8a045" }}>
               {selD.name}
@@ -33,6 +66,7 @@ export const DetailPanel = React.memo(function DetailPanel({ selD, CAT, ADJ, RAD
             <div className="detail-panel__subtitle">{selD.en}</div>
           </div>
 
+          {/* 标签行: 时代、年份、类别、类别代码 */}
           <div className="detail-panel__tags">
             {[
               [selD.era, "rgba(139,105,20,.1)", "rgba(139,105,20,.25)", "#8b6914"],
@@ -70,6 +104,7 @@ export const DetailPanel = React.memo(function DetailPanel({ selD, CAT, ADJ, RAD
             ))}
           </div>
 
+          {/* 相关图片 */}
           <NodePicture
             nodeId={selD.id}
             alt={`${selD.name}相关图片`}
@@ -80,21 +115,25 @@ export const DetailPanel = React.memo(function DetailPanel({ selD, CAT, ADJ, RAD
             errorClassName="detail-panel__image-status--error"
           />
 
+          {/* 发明者 */}
           <div className="detail-panel__block">
             <div className="detail-panel__label">发明者</div>
             <div className="detail-panel__text">{selD.inv}</div>
           </div>
 
+          {/* 简介 */}
           <div className="detail-panel__block">
             <div className="detail-panel__label">简介</div>
             <div className="detail-panel__desc">{selD.desc}</div>
           </div>
 
+          {/* 历史意义 */}
           <div className="detail-panel__meaning">
             <div className="detail-panel__label">历史意义</div>
             <div className="detail-panel__meaning-text">{selD.sig}</div>
           </div>
 
+          {/* 图关系 */}
           <div>
             <div className="detail-panel__label">图关系 Graph Relations</div>
             <div className="detail-panel__stats">
@@ -106,6 +145,7 @@ export const DetailPanel = React.memo(function DetailPanel({ selD, CAT, ADJ, RAD
               </span>
             </div>
 
+            {/* 前驱节点 */}
             {RADJ[selD.id].length > 0 && (
               <div className="detail-panel__block">
                 <div className="detail-panel__label" style={{ color: "rgba(74,144,217,.65)" }}>
@@ -130,6 +170,7 @@ export const DetailPanel = React.memo(function DetailPanel({ selD, CAT, ADJ, RAD
               </div>
             )}
 
+            {/* 后继节点 */}
             {ADJ[selD.id].length > 0 && (
               <div>
                 <div className="detail-panel__label" style={{ color: "rgba(139,105,20,.6)" }}>
@@ -156,6 +197,7 @@ export const DetailPanel = React.memo(function DetailPanel({ selD, CAT, ADJ, RAD
           </div>
         </div>
       ) : (
+        /* 空状态 */
         <div
           className="detail-panel__empty"
         >

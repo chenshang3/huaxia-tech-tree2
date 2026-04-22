@@ -1,23 +1,49 @@
 /* ============================================================
  * NodeTooltip.jsx
  * 节点悬停提示组件
- * 
- * 显示节点的基本信息：名称、分类、年份、描述摘要
  * ============================================================ */
+ /* 职责:
+  * 1. 显示悬浮节点的基本信息
+  * 2. 位置自适应(避免超出视口)
+  * 3. 使用React Portal渲染到body
+  * 4. 动画过渡效果
+  *
+  * 显示内容:
+  *   - 节点名称 + 英文名
+  *   - 类别标签 + 年份
+  *   - 描述摘要(截断80字符)
+  *   - 发明者
+  * ============================================================ */
 
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import './NodeTooltip.css';
 
+/**
+ * 节点悬浮提示
+ * 使用React Portal渲染到document.body
+ *
+ * @param {Object} props
+ * @param {Object|null} props.node - 当前悬浮的节点
+ * @param {Object} props.CAT - 类别映射
+ * @param {Object} props.position - 显示位置(屏幕坐标)
+ * @param {boolean} props.isVisible - 是否显示
+ */
 export function NodeTooltip({ node, CAT, position, isVisible }) {
   const tooltipRef = useRef(null);
+  // 保存渲染用的节点(允许动画完成后再隐藏)
   const [renderedNode, setRenderedNode] = useState(node);
+  // 保存渲染用的位置
   const [renderedPosition, setRenderedPosition] = useState(position);
+  // 调整后的位置(避免超出视口)
   const [adjustedPosition, setAdjustedPosition] = useState(position);
+  // 显示状态: visible/leaving/hidden
   const [displayState, setDisplayState] = useState(
     isVisible && node ? 'visible' : 'hidden'
   );
 
+  // ===================== 状态更新 =====================
+  // 显示或准备离开
   useEffect(() => {
     if (isVisible && node) {
       setRenderedNode(node);
@@ -32,7 +58,8 @@ export function NodeTooltip({ node, CAT, position, isVisible }) {
     }
   }, [isVisible, node, position, renderedNode]);
 
-  // 根据视口边界调整 Tooltip 位置
+  // ===================== 位置调整 =====================
+  // 根据视口边界调整tooltip位置
   useEffect(() => {
     if (displayState !== 'visible' || !renderedNode || !tooltipRef.current) return;
 
@@ -40,27 +67,27 @@ export function NodeTooltip({ node, CAT, position, isVisible }) {
     const tooltipWidth = rect.width || 280;
     const newPos = { ...renderedPosition };
 
+    // X方向: 保持在视口内
     newPos.x = Math.min(
       Math.max(renderedPosition.x + 12, 8),
       window.innerWidth - tooltipWidth - 8
     );
 
-    // 检查上边界
+    // Y方向: 避免超出上下边界
     if (rect.top < 0) {
       newPos.y += Math.abs(rect.top) + 8;
     }
-
-    // 检查下边界
     if (rect.bottom > window.innerHeight) {
       newPos.y -= (rect.bottom - window.innerHeight) + 16;
     }
 
-    // 检查左边界
     setAdjustedPosition(newPos);
   }, [displayState, renderedNode, renderedPosition]);
 
+  // 无节点则不渲染
   if (!renderedNode) return null;
 
+  // 获取类别信息
   const catInfo = CAT[renderedNode.cat];
   const catColor = catInfo?.color || '#c8a045';
   const catLabel = catInfo?.label || renderedNode.cat;
@@ -72,6 +99,7 @@ export function NodeTooltip({ node, CAT, position, isVisible }) {
       ? `${Math.abs(renderedNode.year)} BC`
       : `${renderedNode.year} AD`;
 
+  // 使用Portal渲染到body
   return createPortal(
     <div
       ref={tooltipRef}
@@ -88,11 +116,13 @@ export function NodeTooltip({ node, CAT, position, isVisible }) {
       }}
     >
       <div className="node-tooltip-content">
+        {/* 头部: 名称 */}
         <div className="node-tooltip-header">
           <div className="node-tooltip-name">{renderedNode.name}</div>
           {renderedNode.en && <div className="node-tooltip-en">{renderedNode.en}</div>}
         </div>
 
+        {/* 元信息: 类别 + 年份 */}
         <div className="node-tooltip-meta">
           <span 
             className="node-tooltip-category"
@@ -103,6 +133,7 @@ export function NodeTooltip({ node, CAT, position, isVisible }) {
           {yearStr && <span className="node-tooltip-year">{yearStr}</span>}
         </div>
 
+        {/* 描述摘要 */}
         {renderedNode.desc && (
           <div className="node-tooltip-desc">
             {renderedNode.desc.slice(0, 80)}
@@ -110,6 +141,7 @@ export function NodeTooltip({ node, CAT, position, isVisible }) {
           </div>
         )}
 
+        {/* 发明者 */}
         {renderedNode.inv && (
           <div className="node-tooltip-inv">
             <strong>发明者：</strong>{renderedNode.inv}
