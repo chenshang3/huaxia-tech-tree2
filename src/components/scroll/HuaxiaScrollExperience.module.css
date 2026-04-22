@@ -1196,6 +1196,37 @@
   border-radius: calc(var(--component-radius-sidebar) - 4px);
 }
 
+.annotationPicture {
+  margin: 0 0 18px;
+}
+
+.annotationPictureFrame {
+  width: 100%;
+  overflow: hidden;
+}
+
+.annotationPictureImg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: min(30vh, 286px);
+  object-fit: cover;
+  object-position: center;
+  transition: opacity 0.24s ease;
+}
+
+.annotationPictureStatus {
+  margin-top: 8px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  letter-spacing: 1px;
+  line-height: 1.6;
+}
+
+.annotationPictureStatusError {
+  color: rgba(92, 74, 51, 0.88);
+}
+
 .annotationPanel h2,
 .searchSheet h2 {
   margin: 0 0 14px;
@@ -1537,6 +1568,10 @@
     bottom: 78px;
     width: auto;
     max-height: 33vh;
+  }
+
+  .annotationPictureImg {
+    max-height: 168px;
   }
 
   .panelToggleLeft {

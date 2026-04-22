@@ -2,6 +2,10 @@ import { DEFAULT_UI_CONFIG, normalizeUiConfig } from "../config/uiConfig";
 
 const API_BASE = 'http://localhost:5001/api';
 
+export function getNodePictureUrl(nodeId) {
+  return `${API_BASE}/node-picture/${encodeURIComponent(nodeId)}`;
+}
+
 export async function fetchNodes() {
   const res = await fetch(`${API_BASE}/nodes`);
   return res.json();

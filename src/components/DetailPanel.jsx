@@ -1,4 +1,5 @@
 import React from "react";
+import { NodePicture } from "./NodePicture";
 
 // ============================================================
 // DetailPanel.jsx
@@ -68,6 +69,16 @@ export const DetailPanel = React.memo(function DetailPanel({ selD, CAT, ADJ, RAD
               </span>
             ))}
           </div>
+
+          <NodePicture
+            nodeId={selD.id}
+            alt={`${selD.name}相关图片`}
+            figureClassName="detail-panel__image"
+            frameClassName="detail-panel__image-frame"
+            imageClassName="detail-panel__image-img"
+            statusClassName="detail-panel__image-status"
+            errorClassName="detail-panel__image-status--error"
+          />
 
           <div className="detail-panel__block">
             <div className="detail-panel__label">发明者</div>

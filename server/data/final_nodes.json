@@ -667,7 +667,7 @@
     "era": "春秋"
   },
   {
-    "name": "齿轮传动",
+    "name": "齿轮",
     "desc": "中国古代机械核心技术。山西侯马东周晋国铸铜遗址出土了迄今所知最早的青铜齿轮，用于辘轳等机械的止动功能。汉代齿轮技术进一步发展，被用于传动机械。",
     "year": -770,
     "wiki_url": "https://baike.baidu.com/item/%E4%B8%AD%E5%9B%BD%E9%9D%92%E9%93%9C%E9%BD%BF%E8%BD%AE/10232139",
@@ -770,7 +770,7 @@
     "era": "南北朝"
   },
   {
-    "name": "带犁板铁犁",
+    "name": "铁犁",
     "desc": "中国古代铁犁的重要发展。最早铁犁可追溯至周朝约公元前500年。汉代铸铁技术改进，出现重型带犁板铁犁，用于翻土和防阻塞，墓刻砖等艺术作品中有所描绘，标志着农业工具的重大进步。",
     "year": -500,
     "wiki_url": "https://zh.wikipedia.org/w/index.php?title=%E9%87%8D%E5%9E%8B%E5%B8%A6%E7%8A%81%E6%9D%BF%E9%93%81%E7%8A%81&action=edit&redlink=1",
@@ -1314,8 +1314,8 @@
     "id": "water_powered_celestial_globe",
     "outEdges": [
       "chinese_escapement_mechanism",
-      "continuous_chain_drive",
-      "astronomy"
+      "astronomy",
+      "chain_drive"
     ],
     "era": "西汉"
   },
@@ -1405,7 +1405,6 @@
     "sig": "东汉翻车应用链轮传动，北宋用于天文钟，体现古代机械技术进步",
     "id": "chain_drive",
     "outEdges": [
-      "continuous_chain_drive"
     ],
     "era": "宋朝"
   },
@@ -1487,7 +1486,7 @@
     "era": "东汉"
   },
   {
-    "name": "地震仪",
+    "name": "地动仪",
     "desc": "汉朝张衡于公元132年发明，为世界首台地震仪，利用惯性原理通过金属球掉落指示地震方向，用于朝廷救灾。后世朝代沿用其设计至唐朝，元代周密亦有记载。",
     "year": 132,
     "wiki_url": "https://zh.wikipedia.org/wiki/%E5%9C%B0%E9%9C%87%E5%84%80",
@@ -1780,21 +1779,6 @@
     "era": "隋朝"
   },
   {
-    "name": "自行舟",
-    "desc": "隋朝工匠黄衮为隋炀帝制造水饰，包括机械木俑和自动酒舟，用于宫廷宴会。酒舟在园林石渠中定时运行，呈杯和倒酒木俑自动服务宾客，展示古代中国机械自动化技术。",
-    "year": 604,
-    "wiki_url": "https://zh.wikipedia.org/w/index.php?title=%E8%87%AA%E5%8A%A8%E6%9C%BA%E6%A2%B0%E8%A3%85%E7%BD%AE&action=edit&redlink=1",
-    "en": "Automatic Wine Boat with Mechanical Figures",
-    "cat": "engineering",
-    "inv": "黄衮",
-    "sig": "隋朝宫廷自动化机械，展示古代中国工程技艺与娱乐创新",
-    "id": "automatic_wine_boat_with_mechanical_figures",
-    "outEdges": [
-      "foot_triggered_automatic_door"
-    ],
-    "era": "隋朝"
-  },
-  {
     "name": "赵州桥",
     "desc": "位于河北赵县，建于隋朝，是世界上现存最早、保存最好的敞肩式拱桥，体现了中国古代桥梁建筑的高超技艺。",
     "year": 605,
@@ -1804,19 +1788,6 @@
     "inv": "李春",
     "sig": "世界最早敞肩式拱桥，展现隋朝桥梁建筑高超技艺",
     "id": "zhaozhou_bridge",
-    "outEdges": [],
-    "era": "隋朝"
-  },
-  {
-    "name": "自动门",
-    "desc": "据《太平广记》记载，隋朝隋炀帝在皇宫观文殿设有私人图书馆，其中书堂入口装有脚踏触发机关，能自动拉开锦幔、半开门扉并开启书橱，展现了中国古代机械技术的创新应用。",
-    "year": 618,
-    "wiki_url": "https://zh.wikipedia.org/wiki/自动门",
-    "en": "Foot-Triggered Automatic Door",
-    "cat": "engineering",
-    "inv": "隋朝工匠",
-    "sig": "隋朝皇宫机械装置，体现古代自动化技术应用",
-    "id": "foot_triggered_automatic_door",
     "outEdges": [],
     "era": "隋朝"
   },
@@ -1889,7 +1860,7 @@
     "id": "bookmaking",
     "outEdges": [
       "printing",
-      "ancient_chinese_bookbinding"
+      "bookbinding"
     ],
     "era": "唐朝"
   },
@@ -2008,19 +1979,6 @@
       
     ],
     "era": "五代十国"
-  },
-  {
-    "name": "古书装订",
-    "desc": "中国古代书籍装订技术历经演变。晚唐时期纸本书从书卷转向折页成册，宋代发展出'蝴蝶'装订，元代改进书背保护，明代采用线缝装订。这些创新促进了书籍保存与传播，体现了中国印刷文化的发展。",
-    "year": 960,
-    "wiki_url": "https://zh.wikipedia.org/w/index.php?title=%E6%9D%B1%E4%BA%9E%E5%82%B3%E7%B5%B1%E8%A3%BD%E5%86%8A&action=edit&redlink=1",
-    "en": "Ancient Chinese Bookbinding",
-    "cat": "culture",
-    "inv": "工匠",
-    "sig": "促进书籍保存与传播，体现印刷文化发展",
-    "id": "ancient_chinese_bookbinding",
-    "outEdges": [],
-    "era": "宋朝"
   },
   {
     "name": "烟花",
@@ -2182,19 +2140,6 @@
     "outEdges": [
       "maritime"
     ],
-    "era": "宋朝"
-  },
-  {
-    "name": "链条传送",
-    "desc": "不间断动力链条传动在11世纪的中国首次出现，可能灵感源于汉代已知的链泵。宋朝官员苏颂于1090年在开封的水运仪象台中应用此传动装置，用于旋转浑仪和驱动报时人俑，展示了古代中国机械工程的高超技艺。",
-    "year": 1090,
-    "wiki_url": "https://zh.wikipedia.org/w/index.php?title=%E9%93%BE%E6%9D%A1%E4%BC%A0%E5%8A%A8&action=edit&redlink=1",
-    "en": "Continuous Chain Drive",
-    "cat": "engineering",
-    "inv": "苏颂",
-    "sig": "宋代应用于水运仪象台，展示古代中国机械工程的高超技艺",
-    "id": "continuous_chain_drive",
-    "outEdges": [],
     "era": "宋朝"
   },
   {

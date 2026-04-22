@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
 const path = require('path');
 
 const nodesData = require('./data/final_nodes.json');
@@ -9,6 +10,12 @@ const uiConfig = require('./data/uiConfig.json');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
+const PICTURES_DIR = path.join(__dirname, 'data', 'pictures');
+const NODE_PICTURE_ALIASES = {
+  seal_carving_art: 'seal_carving_art.svg.webp',
+  knife_money: 'knife_moneyjpg.webp',
+  compass_fengshui: 'compass.webp',
+};
 
 // Middleware
 app.use(cors());
@@ -31,6 +38,39 @@ const RADJ = RADJ_temp;
 
 // 构建节点映射
 const NMAP = Object.fromEntries(nodesData.map(n => [n.id, n]));
+
+function buildPictureLookup() {
+  const exact = new Map();
+
+  if (!fs.existsSync(PICTURES_DIR)) {
+    return exact;
+  }
+
+  fs.readdirSync(PICTURES_DIR)
+    .filter((filename) => filename.toLowerCase().endsWith('.webp'))
+    .forEach((filename) => {
+      exact.set(filename, filename);
+      exact.set(filename.replace(/\.webp$/i, ''), filename);
+    });
+
+  return exact;
+}
+
+const PICTURE_LOOKUP = buildPictureLookup();
+
+function resolveNodePicture(nodeId) {
+  if (!nodeId) return null;
+
+  const exactFilename = PICTURE_LOOKUP.get(`${nodeId}.webp`) || PICTURE_LOOKUP.get(nodeId);
+  if (exactFilename) return exactFilename;
+
+  const aliasFilename = NODE_PICTURE_ALIASES[nodeId];
+  if (aliasFilename && PICTURE_LOOKUP.has(aliasFilename)) {
+    return aliasFilename;
+  }
+
+  return null;
+}
 
 // 计算年份对应的加权位置
 function yearToWeightedYear(year, config) {
@@ -246,6 +286,17 @@ app.get('/api/timeline-config', (req, res) => {
 
 app.get('/api/ui-config', (req, res) => {
   res.json(uiConfig);
+});
+
+app.get('/api/node-picture/:id', (req, res) => {
+  const pictureFilename = resolveNodePicture(req.params.id);
+
+  if (!pictureFilename) {
+    return res.status(404).json({ error: 'Picture not found' });
+  }
+
+  res.set('Cache-Control', 'public, max-age=86400');
+  return res.sendFile(path.join(PICTURES_DIR, pictureFilename));
 });
 
 app.get('/api/adjacency', (req, res) => {

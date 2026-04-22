@@ -18,6 +18,7 @@ import {
   ERA_BACKGROUND_SETTINGS,
 } from "../../config/eraBackgrounds";
 import { NodeTooltip } from "../NodeTooltip";
+import { NodePicture } from "../NodePicture";
 import { NODE_RADIUS, VIEW_BOX } from "../../utils/constants";
 import { edgePath } from "../../utils/graphUtils";
 import { buildTimelineTicks, computeEraTimelinePositions } from "../../utils/timelineUtils";
@@ -669,6 +670,15 @@ function AnnotationPanel({ node, categories, predecessorNodes, successorNodes, i
       <p className={styles.annotationKicker}>{formatYear(node.year)}</p>
       <p className={styles.annotationKicker}>{node.era} · {category.label}</p>
       <h2>{node.name}</h2>
+      <NodePicture
+        nodeId={node.id}
+        alt={`${node.name}相关图片`}
+        figureClassName={styles.annotationPicture}
+        frameClassName={styles.annotationPictureFrame}
+        imageClassName={styles.annotationPictureImg}
+        statusClassName={styles.annotationPictureStatus}
+        errorClassName={styles.annotationPictureStatusError}
+      />
       <p className={styles.annotationLead}>{node.sig}</p>
       <p>{node.desc}</p>
       <dl className={styles.annotationFacts}>

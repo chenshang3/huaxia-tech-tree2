@@ -440,6 +440,37 @@
   font-family: var(--tag-font, inherit);
 }
 
+.detail-panel__image {
+  margin: 0 0 14px;
+}
+
+.detail-panel__image-frame {
+  width: 100%;
+  overflow: hidden;
+}
+
+.detail-panel__image-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: min(30vh, 248px);
+  object-fit: cover;
+  object-position: center;
+  transition: opacity 0.22s ease;
+}
+
+.detail-panel__image-status {
+  margin-top: 6px;
+  color: #8b7355;
+  font-size: 10px;
+  letter-spacing: 1px;
+  line-height: 1.6;
+}
+
+.detail-panel__image-status--error {
+  color: #8b6d48;
+}
+
 .detail-panel__block {
   margin-bottom: 10px;
 }
