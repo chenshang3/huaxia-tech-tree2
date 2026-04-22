@@ -28,6 +28,8 @@ export {
   PANEL_COLLAPSE_EFFECTS,
 } from "./huaxiaScrollConstants";
 
+const BLANK_CLICK_DRAG_THRESHOLD = 6;
+
 function normalizeCategories(categories) {
   if (!Array.isArray(categories)) return categories || {};
 
@@ -45,8 +47,8 @@ function normalizeCategories(categories) {
 
 function formatYear(year) {
   if (typeof year !== "number") return "纪年未详";
-  if (year < 0) return `公元前 ${Math.abs(year)} 年`;
-  return `公元 ${year} 年`;
+  if (year < 0) return `公元前${Math.abs(year)}年`;
+  return `公元${year}年`;
 }
 
 function normalizeEraName(eraName) {
@@ -146,8 +148,9 @@ function ScrollContainer({ children, activeEraName, onSearch, scrollRef }) {
     <main
       className={styles.scrollStage}
       style={{
-        "--calligraphy-image": `url("${publicPath}/images/backgrounds/bg_calligraphy.jpg")`,
-        "--scroll-paper-image": `url("${publicPath}/images/backgrounds/bg_scroll_1.jpg")`,
+        "--calligraphy-image": `url("${publicPath}/images/backgrounds/cal_2.jpg")`,
+        // "--scroll-paper-image": `url("${publicPath}/images/backgrounds/bg_scroll_1.jpg")`,
+        "--scroll-scene-image": `url("${publicPath}/images/backgrounds/tsing_ming.jpg")`,
       }}
     >
       <div className={styles.stageBackdrop} aria-hidden="true" />
@@ -351,6 +354,7 @@ function HybridTechTree({
   actions,
   isDragging,
   onSelect,
+  onClearSelection,
   leftOpen,
   onToggleLeft,
   timelineConfig,
@@ -359,7 +363,64 @@ function HybridTechTree({
   const [hoveredNode, setHoveredNode] = useState(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const treeViewportRef = useRef(null);
+  const blankCanvasPressRef = useRef({ pending: false, moved: false, startX: 0, startY: 0 });
   const [viewportWidthPx, setViewportWidthPx] = useState(VIEW_BOX_WIDTH);
+  const scrollSceneProgress = useMemo(() => {
+    const positions = Object.values(POS || {});
+    if (!positions.length) return 0;
+
+    const xValues = positions
+      .map((position) => position?.x)
+      .filter((value) => Number.isFinite(value));
+
+    if (!xValues.length) return 0;
+
+    const minNodeX = Math.min(...xValues);
+    const maxNodeX = Math.max(...xValues);
+    const minPanX = VIEW_BOX_WIDTH / 2 - maxNodeX * scale;
+    const maxPanX = VIEW_BOX_WIDTH / 2 - minNodeX * scale;
+    const panSpan = maxPanX - minPanX;
+
+    if (!Number.isFinite(panSpan) || panSpan <= 0) return 0;
+
+    const clampedPanX = Math.min(maxPanX, Math.max(minPanX, pan.x));
+    return (maxPanX - clampedPanX) / panSpan;
+  }, [POS, pan.x, scale]);
+
+  const resetBlankCanvasPress = () => {
+    blankCanvasPressRef.current = { pending: false, moved: false, startX: 0, startY: 0 };
+  };
+
+  const handleCanvasMouseDownCapture = (event) => {
+    if (event.button !== 0 || event.target.dataset?.blankCanvas !== "true") {
+      resetBlankCanvasPress();
+      return;
+    }
+
+    blankCanvasPressRef.current = {
+      pending: true,
+      moved: false,
+      startX: event.clientX,
+      startY: event.clientY,
+    };
+  };
+
+  const handleCanvasMouseMoveCapture = (event) => {
+    const press = blankCanvasPressRef.current;
+    if (!press.pending || press.moved) return;
+
+    if (Math.hypot(event.clientX - press.startX, event.clientY - press.startY) > BLANK_CLICK_DRAG_THRESHOLD) {
+      press.moved = true;
+    }
+  };
+
+  const handleBlankCanvasClick = () => {
+    const press = blankCanvasPressRef.current;
+    if (selectedId && press.pending && !press.moved) {
+      onClearSelection();
+    }
+    resetBlankCanvasPress();
+  };
 
   useEffect(() => {
     const viewportShell = treeViewportRef.current;
@@ -405,12 +466,19 @@ function HybridTechTree({
         />
 
         <div className={styles.treeCanvasBody}>
+          <div
+            className={styles.treeScrollPainting}
+            aria-hidden="true"
+            style={{ "--scroll-scene-progress": `${scrollSceneProgress * 100}%` }}
+          />
           <svg
             ref={viewportRef}
             className={styles.hybridGraphSvg}
             viewBox={VIEW_BOX}
             preserveAspectRatio="xMidYMin meet"
             xmlns="http://www.w3.org/2000/svg"
+            onMouseDownCapture={handleCanvasMouseDownCapture}
+            onMouseMoveCapture={handleCanvasMouseMoveCapture}
             onWheel={handlers.onWheel}
             onMouseDown={handlers.onMouseDown}
             onMouseMove={handlers.onMouseMove}
@@ -429,6 +497,14 @@ function HybridTechTree({
                 <path d="M0,0 L0,8 L8,4z" fill="#8f2f28" />
               </marker>
             </defs>
+
+            <rect
+              width="100%"
+              height="100%"
+              fill="transparent"
+              data-blank-canvas="true"
+              onClick={handleBlankCanvasClick}
+            />
 
             <g transform={`translate(${pan.x},${pan.y}) scale(${scale})`}>
               {EDGES.map((edge) => {
@@ -543,7 +619,7 @@ function HybridTechTree({
   );
 }
 
-function AnnotationPanel({ node, categories, predecessorNodes, successorNodes, lineage, isOpen, onToggle, onSelect, onClose }) {
+function AnnotationPanel({ node, categories, predecessorNodes, successorNodes, isOpen, onToggle, onSelect }) {
   if (!node) {
     return (
       <>
@@ -576,8 +652,8 @@ function AnnotationPanel({ node, categories, predecessorNodes, successorNodes, l
       style={{ "--annotation-tone": category.color }}
       aria-hidden={!isOpen}
     >
-      <button type="button" className={styles.closeAnnotation} onClick={onClose}>清除</button>
-      <p className={styles.annotationKicker}>{formatYear(node.year)} · {node.era} · {category.label}</p>
+      <p className={styles.annotationKicker}>{formatYear(node.year)}</p>
+      <p className={styles.annotationKicker}>{node.era} · {category.label}</p>
       <h2>{node.name}</h2>
       <p className={styles.annotationLead}>{node.sig}</p>
       <p>{node.desc}</p>
@@ -743,10 +819,16 @@ export function HuaxiaScrollExperience({
     : [];
 
   const scrollToEra = (eraName) => {
-    const eraNode = NODES.find((node) => normalizeEraName(node.era) === eraName && POS[node.id]);
-    if (eraNode) {
-      actions.panToNode(eraNode.id, POS);
-    }
+    const targetEra = eraPositions.find((era) => era.name === eraName);
+    if (!targetEra) return;
+
+    actions.panToWorldPoint({
+      x: (targetEra.x1 + targetEra.x2) / 2,
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedId("");
   };
 
   const selectNode = (id) => {
@@ -788,6 +870,7 @@ export function HuaxiaScrollExperience({
           actions={actions}
           isDragging={isDragging}
           onSelect={selectNode}
+          onClearSelection={clearSelection}
           leftOpen={leftOpen}
           onToggleLeft={() => setLeftOpen((open) => !open)}
           timelineConfig={timelineConfig}
@@ -801,11 +884,9 @@ export function HuaxiaScrollExperience({
         categories={categories}
         predecessorNodes={predecessorNodes}
         successorNodes={successorNodes}
-        lineage={lineage}
         isOpen={rightOpen}
         onToggle={() => setRightOpen((open) => !open)}
         onSelect={selectNode}
-        onClose={() => setSelectedId("")}
       />
 
       <SearchSheet

@@ -60,21 +60,21 @@ function computePositions(nodes) {
   // ========== 分类高度区间映射 ==========
   // 限制每个分类的 lane 范围，实现分类分区布局
   const CATEGORY_LANES = {
-    agriculture: { minLane: 2, maxLane: 4 },    // 农业 - 最上部
-    craft:       { minLane: 2, maxLane: 4 },    // 工艺 - 上部
-    textile:     { minLane: 3, maxLane: 5 },    // 纺织 - 上部
-    metallurgy:  { minLane: 3, maxLane: 5 },    // 冶金 - 上部
+    agriculture: { minLane: 3, maxLane: 5 },    // 农业 - 最上部
+    craft:       { minLane: 3, maxLane: 5 },    // 工艺 - 上部
+    textile:     { minLane: 4, maxLane: 6 },    // 纺织 - 上部
+    metallurgy:  { minLane: 4, maxLane: 6 },    // 冶金 - 上部
     
-    culture:     { minLane: 4, maxLane: 6 },    // 文化 - 中部
-    science:     { minLane: 4, maxLane: 6 },    // 科学 - 中部
-    math:        { minLane: 5, maxLane: 7 },    // 数学 - 中部
+    culture:     { minLane: 5, maxLane: 7 },    // 文化 - 中部
+    science:     { minLane: 5, maxLane: 7 },    // 科学 - 中部
+    math:        { minLane: 6, maxLane: 8 },    // 数学 - 中部
     
-    medicine:    { minLane: 5, maxLane: 7 },    // 医学 - 中下部
-    navigation:  { minLane: 6, maxLane: 8 },    // 航海 - 中下部
-    trade:       { minLane: 6, maxLane: 8 },    // 贸易 - 中下部
+    medicine:    { minLane: 6, maxLane: 8 },    // 医学 - 中下部
+    navigation:  { minLane: 7, maxLane: 9 },    // 航海 - 中下部
+    trade:       { minLane: 7, maxLane: 9 },    // 贸易 - 中下部
     
-    engineering: { minLane: 7, maxLane: 9 },    // 工程 - 下部
-    military:    { minLane: 7, maxLane: 9 },    // 军事 - 下部
+    engineering: { minLane: 8, maxLane: 10 },    // 工程 - 下部
+    military:    { minLane: 8, maxLane: 10 },    // 军事 - 下部
   };
 
   // 计算总加权跨度

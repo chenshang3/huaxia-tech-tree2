@@ -222,13 +222,7 @@ export function usePanZoom() {
     return (1 - Math.exp(-k * t)) / (1 - Math.exp(-k));
   };
 
-  const panToNode = useCallback((nodeId, POS) => {
-    const nodePos = POS[nodeId];
-    if (!nodePos) return;
-
-    const center = getViewportCenter();
-    if (!center) return;
-
+  const animatePanTo = useCallback((targetPanX, targetPanY) => {
     if (animTargetRef.current) {
       cancelAnimationFrame(animTargetRef.current);
       animTargetRef.current = null;
@@ -236,9 +230,8 @@ export function usePanZoom() {
 
     const startPanX = clampPanX(panRef.current.x);
     const startPanY = clampPanY(panRef.current.y);
-
-    const targetPanX = clampPanX(center.x - nodePos.x * scaleRef.current);
-    const targetPanY = clampPanY(center.y - nodePos.y * scaleRef.current);
+    const clampedTargetPanX = clampPanX(targetPanX);
+    const clampedTargetPanY = clampPanY(targetPanY);
 
     // 起点先规范化，避免动画第一帧纠偏
     if (startPanX !== panRef.current.x || startPanY !== panRef.current.y) {
@@ -254,8 +247,8 @@ export function usePanZoom() {
       const t = Math.min((now - startTime) / duration, 1);
       const ease = easeOutExpoNormalized(t);
 
-      const nextPanX = clampPanX(startPanX + (targetPanX - startPanX) * ease);
-      const nextPanY = clampPanY(startPanY + (targetPanY - startPanY) * ease);
+      const nextPanX = clampPanX(startPanX + (clampedTargetPanX - startPanX) * ease);
+      const nextPanY = clampPanY(startPanY + (clampedTargetPanY - startPanY) * ease);
 
       panRef.current = { ...panRef.current, x: nextPanX, y: nextPanY };
       setPan({ x: nextPanX, y: nextPanY });
@@ -269,7 +262,28 @@ export function usePanZoom() {
     };
 
     animTargetRef.current = requestAnimationFrame(animate);
-  }, [getViewportCenter, clampPanX, clampPanY]);
+  }, [clampPanX, clampPanY]);
+
+  const panToWorldPoint = useCallback(({ x, y }) => {
+    if (!Number.isFinite(x)) return;
+
+    const center = getViewportCenter();
+    if (!center) return;
+
+    const targetPanX = center.x - x * scaleRef.current;
+    const targetPanY = Number.isFinite(y)
+      ? center.y - y * scaleRef.current
+      : clampPanY(panRef.current.y);
+
+    animatePanTo(targetPanX, targetPanY);
+  }, [animatePanTo, clampPanY, getViewportCenter]);
+
+  const panToNode = useCallback((nodeId, POS) => {
+    const nodePos = POS[nodeId];
+    if (!nodePos) return;
+
+    panToWorldPoint(nodePos);
+  }, [panToWorldPoint]);
 
   return {
     pan,
@@ -292,6 +306,7 @@ export function usePanZoom() {
       zoomIn,
       zoomOut,
       resetView,
+      panToWorldPoint,
       panToNode,
     },
   };
